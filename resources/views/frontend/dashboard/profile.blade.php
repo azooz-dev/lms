@@ -4,7 +4,7 @@
 
 
 @section('title_dashboard')
-{{ $user->name }} profile | Easy Learning
+{{ Auth::user()->name }} profile | Easy Learning
 @endsection
 
 
@@ -14,7 +14,7 @@
             <img class="rounded-full" src="{{ (!empty($user->photo)) ? Storage::url('public/upload/users_images/'. $user->photo) : asset('storage/upload/images.jpg') }}" alt="Student thumbnail image">
         </div>
         <div class="media-body">
-            <h2 class="section__title fs-30">Hello, {{ $user->name }}</h2>
+            <h2 class="section__title fs-30">Hello, {{ Auth::user()->name }}</h2>
             </div><!-- end rating-wrap -->
         </div><!-- end media-body -->
     </div><!-- end media -->
@@ -24,15 +24,15 @@
 </div>
 <div class="profile-detail mb-5">
     <ul class="generic-list-item generic-list-item-flash">
-        <li><span class="profile-name">Registration Date:</span><span class="profile-desc">{{ $user->created_at->format('D d M Y, h:i:s A') }}</span></li>
-        <li><span class="profile-name">Name:</span><span class="profile-desc">{{ $user->name }}</span></li>
-        <li><span class="profile-name">User Name:</span><span class="profile-desc">{{ $user->username }}</span></li>
-        <li><span class="profile-name">Email:</span><span class="profile-desc">{{ $user->email }}</span></li>
-        <li><span class="profile-name">Phone Number:</span><span class="profile-desc">{{ $user->phone }}</span></li>
-        <li><span class="profile-name">Address:</span><span class="profile-desc">{{ $user->address }}</span></li>
+        <li><span class="profile-name">Registration Date:</span><span class="profile-desc">{{ Auth::user()->created_at->format('D d M Y, h:i:s A') }}</span></li>
+        <li><span class="profile-name">Name:</span><span class="profile-desc">{{ Auth::user()->name }}</span></li>
+        <li><span class="profile-name">User Name:</span><span class="profile-desc">{{ Auth::user()->username }}</span></li>
+        <li><span class="profile-name">Email:</span><span class="profile-desc">{{ Auth::user()->email }}</span></li>
+        <li><span class="profile-name">Phone Number:</span><span class="profile-desc">{{ Auth::user()->phone }}</span></li>
+        <li><span class="profile-name">Address:</span><span class="profile-desc">{{ Auth::user()->address }}</span></li>
         <li>
             <span class="profile-name">Bio:</span>
-            <span class="profile-desc">{{ !empty($user->bio) ? $user->bio . '.' : $user->bio  }}</span>
+            <span class="profile-desc">@if (!empty(Auth::user()->bio)) {!! Auth::user()->bio !!} @else {{ '' }} @endif</span>
         </li>
     </ul>
 </div>

@@ -76,6 +76,7 @@ class CartController extends Controller
                 'weight' => 1,
                 'options' => [
                     'slug' => $course->slug,
+                    'instructor_id' => $course->instructor->id,
                     'image' => Storage::url("public/upload/course/images/{$course->image}"),
                     'instructor' => $course->instructor->name,
                 ],
@@ -353,7 +354,7 @@ class CartController extends Controller
         $existingOrder = Order::where(function ($query) use ($request) {
             $query->whereHas('course', function ($query) use ($request) {
                 $query->whereIn('course_id', $request->course_id);
-            })->where('user_id', Auth::user()->id);
+            })->where('user_id', Auth::user()->id)->where('is_visible_to_user', '1');
         })->first();
 
         if ($existingOrder) {

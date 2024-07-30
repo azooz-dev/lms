@@ -245,78 +245,6 @@
 <!-- End Change The  Wishlist Icon-->
 
 
-
-<!-- Start Add To Wishlist -->
-<script>
-    function addToWishlist(courseId) {
-        // Determine the theme outside of the fetch request
-        const theme = localStorage.getItem('theme') || document.body.className;
-        const isDarkMode = theme === 'dark';
-
-        // Define the Toast constant outside of the fetch request
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 4000,
-            didOpen: () => {
-                if (isDarkMode) {
-                    // Dark mode styles
-                    Swal.getPopup().style.backgroundColor = '#333';
-                    Swal.getTitle().style.color = '#fff';
-                    Swal.getContent().style.color = '#fff';
-                } else {
-                    // Light mode styles (optional, as SweetAlert2 defaults to light mode)
-                    Swal.getPopup().style.backgroundColor = '#fff';
-                    Swal.getTitle().style.color = '#000';
-                    Swal.getContent().style.color = '#000';
-                }
-            }
-        });
-
-        const url = '{{ route('wishlist.store')}}';
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                'id': courseId
-            })
-        })
-        .then(response => response.json()) // Parse the response as JSON
-        .then(data => {
-            // Check if the response contains an error message
-            if (data.error) {
-                // Throw an error with the error message from the response
-                throw new Error(data.error);
-            }
-            // If there's no error, proceed with the success message
-            Toast.fire({
-                icon: 'success',
-                title: data.success
-            });
-            var textBtn = document.querySelector('.swapping-btn');
-            console.log(document.querySelector('.swapping-btn'));
-            if (data.success == 'Course has been removed from your wishlist.') {
-                textBtn.innerHTML = 'Wishlist';
-            } else {
-                textBtn.innerHTML = 'Wishlisted';
-            }
-        })
-        .catch(error => {
-            // Handle network errors or issues with the fetch request, including the error message from the response
-            Toast.fire({
-                icon: 'error',
-                title: error.message // Display the error message
-            });
-        });
-    }
-</script>
-<!-- End Add To Wishlist -->
-
-
 <!-- Start Show Mini Cart And Remove From Mini Cart -->
 <script>
     // Start Show Mini Cart Content
@@ -469,7 +397,7 @@
                                 </th>
                                 <td>
                                     <a href="/course/details/${course.id}/${course.options.slug}" class="text-black font-weight-semi-bold">${course.name}</a>
-                                    <p class="fs-14 text-gray lh-20">By <a href="/instructor/details/${course.options.instructor_id}" class="text-color hover-underline">${course.options.instructor_name}</a></p>
+                                    <p class="fs-14 text-gray lh-20">By <a href="/instructor/details/${course.options.instructor_id}" class="text-color hover-underline">${course.options.instructor}</a></p>
                                 </td>
                                 <td>
                                     <ul class="generic-list-item font-weight-semi-bold">

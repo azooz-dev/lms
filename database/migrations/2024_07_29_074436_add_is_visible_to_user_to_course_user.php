@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('coupons', function (Blueprint $table) {
-            $table->foreignId('course_id')->nullable()->constrained('courses');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->enum('is_visible_to_user', ['0', '1'])->default(1);
         });
     }
 
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('coupons', function (Blueprint $table) {
+        Schema::table('orders', function (Blueprint $table) {
             //
         });
     }

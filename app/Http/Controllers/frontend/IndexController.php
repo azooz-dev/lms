@@ -7,6 +7,8 @@ use App\Models\Category;
 use App\Models\Course;
 use App\Models\SubCategory;
 use App\Models\User;
+use App\Models\Wish_list;
+
 // use Illuminate\Http\Request;
 
 class IndexController extends Controller
@@ -27,7 +29,8 @@ class IndexController extends Controller
     public function subCategory_courses(string $id, string $slug) {
         $subCategory = SubCategory::where('id', $id)->where('subCategory_slug', $slug)->first();
         $categories = Category::orderBy('category_name', 'asc')->get();
-        return view('frontend.category.subCategory_courses', compact('subCategory', 'categories'));
+        $wishLists = Wish_list::all();
+        return view('frontend.category.subCategory_courses', compact('subCategory', 'categories', 'wishLists'));
     }
 
 

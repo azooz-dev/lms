@@ -10,7 +10,12 @@ use Illuminate\Http\Request;
 class ReportController extends Controller
 {
     public function all_reports() {
-        $oldYear = Order::orderBy('created_at', 'asc')->first()->created_at->format('Y');
+        $oldYear = Order::orderBy('created_at', 'asc')->first();
+        if ($oldYear) {
+            $oldYear = $oldYear->created_at->format('Y');
+        } else {
+            $oldYear = null;
+        }
         return view('admin.backend.reports.get_reports', compact('oldYear'));
     }
 

@@ -54,6 +54,7 @@ Route::controller(UserController::class)->group(function () {
         Route::controller(OrderController::class)->group(function () {
             Route::get('/my/courses/{id}', 'my_courses')->name('user.my_course');
             Route::get('/my/course/details/{id}', 'my_course_details')->name('user.course_details');
+            Route::delete('/delete/my/course/{id}', 'delete_my_course')->name('user.delete_course');
         });
 
 

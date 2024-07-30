@@ -142,9 +142,6 @@
     if (lectureTitle === '') {
         errorMessage.push('Lecture Title');
     }
-    if (content === '') {
-        errorMessage.push('Lecture Content');
-    }
     if (url_video === '') {
         errorMessage.push('Video Link');
     }

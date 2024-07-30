@@ -4771,7 +4771,32 @@ div.datedropper .picker .pick-lg-b li {
     font-weight: 600;
     line-height: 25px;
     margin-bottom: 1px;
-    font-size: 20px; }
+    font-size: 20px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-title-1 a{
+    color: #233d63;
+    font-weight: 600;
+    line-height: 25px;
+    margin-bottom: 1px;
+    font-size: 20px;;
+  }
+    @media (min-width: 576px) and (max-width: 767px) {
+      .card-item .card-title {
+        font-size: 20px; }
+    }
+    @media (min-width: 768px) {
+      .card-item .card-title {
+        font-size: 15px; }
+    }
+    @media (min-width: 1200px) {
+      .card-item .card-title {
+        font-size: 20px; }
+    }
     .card-item .card-title a {
       color: #233d63;
       -webkit-transition: all 0.3s;

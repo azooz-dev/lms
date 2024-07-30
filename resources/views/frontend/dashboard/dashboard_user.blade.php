@@ -159,7 +159,7 @@
     });
     </script>
 
-
+<script>
     @if(Session::has('message'))
     var type = "{{ Session::get('alert-type','info') }}"
     switch(type){
@@ -307,5 +307,15 @@ function removeFromWishlist(course) {
 }
 </script>
 
+	<!-- At the end of your add_course.blade.php file -->
+    <script src="https://cdn.tiny.cloud/1/soqkybk1yse08bhw70fw8q97x6l3pdkndwgsnphim44zcfm8/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>tinymce.init({
+        selector: 'textarea#myeditorinstance',
+        height: 300,
+        plugins: 'code table lists',
+        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | code | table',
+        // Additional configuration options...
+    });
+    </script>
 </body>
 </html>

@@ -123,7 +123,7 @@ class OrderController extends Controller
 
     public function my_courses(string $id) {
         // Fetch all orders for the instructor
-        $orders = Order::where('user_id', $id)->get();
+        $orders = Order::where('user_id', $id)->where('is_visible_to_user', '1')->get();
             
         // Group orders by course_id and select the latest order for each group
         $aggregatedOrders = $orders->groupBy(function ($order) {
@@ -168,5 +168,16 @@ class OrderController extends Controller
             'notifications' => $notifications,
             'count' => $count
         ]);
+    }
+
+    public function delete_my_course(string $id) {
+
+        $order = Order::find($id);
+
+        $order->is_visible_to_user = '0';
+
+        $order->save();
+
+        return redirect()->back();
     }
 }

@@ -17,12 +17,14 @@ use Intervention\Image\Drivers\Imagick\Driver;
 class CourseController extends Controller
 {
 
-    public function all_courses_by_instructor(string $id) {
+    public function all_courses_by_instructor(string $id)
+    {
         $courses = Course::where('instructor_id', $id)->orderBy('id', 'desc')->get();
         return view('instructor.course.all_courses', compact('courses'));
     }
 
-    public function add_course() {
+    public function add_course()
+    {
         $categories = Category::orderBy('category_name', 'asc')->get();
         return view('instructor.course.add_course', compact('categories'));
     }
@@ -34,7 +36,8 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function get_subCategories(string $id) {
+    public function get_subCategories(string $id)
+    {
         try {
             $subCategories = SubCategory::where('category_id', $id)
                 ->orderBy('subCategory_name', 'asc')
@@ -57,10 +60,11 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store_course(Request $request) {
+    public function store_course(Request $request)
+    {
         // Validate the request data
         $request->validate([
-            'title' => 'required|string|max:60',
+            'title' => 'required|string',
             'video_link' => 'required|mimes:mp4,webm|max:10000',
             'category_id' => 'required',
             'sub_category_id' => 'required',
@@ -154,7 +158,8 @@ class CourseController extends Controller
 
 
 
-    public function edit_course(string $id) {
+    public function edit_course(string $id)
+    {
         // Retrieve the course details
         $course = Course::find($id);
 
@@ -179,53 +184,54 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update_course(Request $request, string $id) {
+    public function update_course(Request $request, string $id)
+    {
         // Validate the request data
         $request->validate([
             'category_id' => 'required',
             'sub_category_id' => 'required',
         ]);
-    
+
         // Retrieve the course details
         $course = Course::find($id);
-    
+
         try {
-            if($request->hasFile('image')) {
+            if ($request->hasFile('image')) {
                 // For resize image
                 $manager = new ImageManager(new Driver());
-    
+
                 // If the file exists in database and exists in storage folder
-                if(!empty($course->image) && Storage::exists('public/upload/course/images/' . $course->image)) {
+                if (!empty($course->image) && Storage::exists('public/upload/course/images/' . $course->image)) {
                     Storage::delete('public/upload/course/images/' . $course->image);
                 }
-    
+
                 $imgName = date('YmdHis') . '.' . $request->file('image')->getClientOriginalExtension();
                 // Get the real path of the uploaded file
                 $path = $request->file('image')->getRealPath();
-    
+
                 // Check if the file exists and is readable
                 if (!file_exists($path) || !is_readable($path)) {
                     throw new \Exception('File not found or not readable.');
                 }
-    
+
                 $img = $manager->read($request->file('image'))->resize(370, 246)->toJpeg(80);
-    
+
                 // Save the image to storage
                 $img->save('storage/upload/course/images/' . $imgName);
-    
+
                 $data = $request->except('image');
                 $data['image'] = $imgName;
             } else {
                 $data = $request->except('image');
             }
-    
+
             // Handle checkboxes
             $data['best_seller'] = isset($data['best_seller']) ? '1' : '0';
             $data['featured'] = isset($data['featured']) ? '1' : '0';
             $data['highest_rated'] = isset($data['highest_rated']) ? '1' : '0';
-    
+
             $course->update($data);
-    
+
             $notification = array(
                 'message' => 'Course updated successfully.',
                 'alert-type' => 'success',
@@ -250,7 +256,8 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update_video(Request $request, string $id) {
+    public function update_video(Request $request, string $id)
+    {
         try {
             $course = Course::find($id);
 
@@ -288,11 +295,12 @@ class CourseController extends Controller
     }
 
 
-    public function update_goals(Request $request, string $id) {
+    public function update_goals(Request $request, string $id)
+    {
         $course = Course::find($id);
 
         // Filter out any empty values from the course_goals array
-        $filteredGoals = array_filter($request->course_goals, function($value) {
+        $filteredGoals = array_filter($request->course_goals, function ($value) {
             return !is_null($value) && $value !== '';
         });
 
@@ -330,7 +338,8 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function destory_course(string $id) {
+    public function destory_course(string $id)
+    {
         $course = Course::find($id);
         try {
             // If the course has an image, delete it
@@ -368,7 +377,8 @@ class CourseController extends Controller
 
 
 
-    public function create_section(string $id) {
+    public function create_section(string $id)
+    {
         $course = Course::find($id);
         return view('instructor.course.section.create_section', compact('course'));
     }
@@ -382,7 +392,8 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store_section(Request $request, string $courseId) {
+    public function store_section(Request $request, string $courseId)
+    {
         Course::find($courseId)
             ->sections()
             ->create([  // Create a new section based on the input
@@ -399,7 +410,8 @@ class CourseController extends Controller
 
 
 
-    public function destory_section(string $id) {
+    public function destory_section(string $id)
+    {
         $section = Course_Section::find($id);
         try {
             $section->lectures()->delete();
@@ -431,7 +443,8 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store_lecture(Request $request, string $id) {
+    public function store_lecture(Request $request, string $id)
+    {
         try {
             $section = Course_Section::find($id);  // Find the section with the given ID
 
@@ -456,7 +469,8 @@ class CourseController extends Controller
 
 
 
-    public function edit_lecture(Request $request, string $id) {
+    public function edit_lecture(Request $request, string $id)
+    {
         $lecture = Course_Lecture::find($id);
         return view('instructor.course.lecture.edit_lecture', compact('lecture'));
     }
@@ -472,7 +486,8 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update_lecture(Request $request, string $id) {
+    public function update_lecture(Request $request, string $id)
+    {
         try {
             $lecture = Course_Lecture::find($id);  // Find the lecture with the given ID
             $lecture->update([  // Update the lecture with the given data
@@ -504,7 +519,8 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function destory_lecture(string $id) {
+    public function destory_lecture(string $id)
+    {
         $lecture = Course_Lecture::find($id);  // Find the lecture with the given ID
         $lecture->delete();  // Delete the lecture
         $notification = [  // Create a success message
@@ -513,5 +529,4 @@ class CourseController extends Controller
         ];
         return back()->with($notification);  // Redirect the user back with the success message
     }
-
 }

@@ -95,7 +95,7 @@ class BlogController extends Controller
 
         $data = $request->validate([
             'category_id' => 'required',
-            'title' => 'required|string|max:50',
+            'title' => 'required|string',
             'description' => 'required',
             'image' => 'required',
         ]);
@@ -121,12 +121,12 @@ class BlogController extends Controller
 
             $post = POST::create($data);
 
-            $tags = $request->tag;
+            if ($request->has('tag')) {
+                $tags = $request->tag;
+    
+                $words = explode(',', $tags);
 
-            $words = explode(',', $tags);
-
-            foreach ($words as $key => $word) {
-                if ($key > 1) {
+                foreach ($words as $key => $word) {
                     $tag = Tag::create([
                         'name' => $word,
                         'slug' => strtolower(str_replace(' ', '-', $word)),
@@ -138,6 +138,7 @@ class BlogController extends Controller
                     ]);
                 }
             }
+
 
             $notification = array(
                 'message' => 'Post created successfully.',
@@ -176,7 +177,7 @@ class BlogController extends Controller
 
         // Validate the request data
         $data = $request->validate([
-            'title' => 'required|string|max:50',
+            'title' => 'required|string',
             'description' => 'required',
         ]);
 

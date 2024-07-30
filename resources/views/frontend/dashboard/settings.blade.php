@@ -113,7 +113,7 @@ Dashboard Settings | Easy Learning
                             <div class="input-box col-lg-12">
                                 <label class="label-text">Bio</label>
                                 <div class="form-group">
-                                    <textarea class="form-control form--control user-text-editor pl-3 @error('bio') is-invalid @enderror" name="bio" id="bio">{{ $user->bio }}</textarea>
+                                    <textarea class="form-control form--control user-text-editor pl-3 @error('bio') is-invalid @enderror" name="bio" id="myeditorinstance">{!! $user->bio !!}</textarea>
                                     @error('bio')
                                         <span class="text-danger">{{ $message }}</span>
                                     @enderror
@@ -247,5 +247,4 @@ Dashboard Settings | Easy Learning
                     </div><!-- end setting-body -->
                 </div><!-- end tab-pane --> --}}
             </div>
-
 @endsection

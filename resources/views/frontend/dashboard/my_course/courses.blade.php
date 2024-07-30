@@ -45,18 +45,49 @@ My Courses | Easy Learning
             </div><!-- end card-image -->
             <div class="card-body">
                 <h6 class="ribbon ribbon-blue-bg fs-14 mb-3">{{ $order->course->course_level }}</h6>
-                <h5 class="card-title"><a href="course-details.html">{{ $order->course->name }}</a></h5>
-                <p class="card-text"><a href="teacher-detail.html">{{ $order->course->instructor->name }}</a></p>
+                <h5 class="card-title"><a href="{{ route('user.course_details', $order->course->id) }}">{{ $order->course->name }}</a></h5>
+                <p class="card-text"><a href="{{ route('instructor_details', $order->course->instructor_id) }}">{{ $order->course->instructor->name }}</a></p>
                 <div class="rating-wrap d-flex align-items-center py-2">
                     <div class="review-stars">
-                        <span class="rating-number">4.4</span>
-                        <span class="la la-star"></span>
-                        <span class="la la-star"></span>
-                        <span class="la la-star"></span>
-                        <span class="la la-star"></span>
-                        <span class="la la-star-o"></span>
+                        @if (round($order->course->averageReviewScore->average_score, 1) == 0)
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            @elseif (round($order->course->averageReviewScore->average_score, 1) == 1 || round($course->averageReviewScore->average_score, 1) < 2)
+                            <span class="la la-star"></span>
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            @elseif (round($order->course->averageReviewScore->average_score, 1) == 2 || round($course->averageReviewScore->average_score, 1) < 3)
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            @elseif (round($order->course->averageReviewScore->average_score, 1) == 3 || round($course->averageReviewScore->average_score, 1) < 4)
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                            <span class="la la-star-o"></span>
+                            <span class="la la-star-o"></span>
+                            @elseif (round($order->course->averageReviewScore->average_score, 1) == 4 || round($course->averageReviewScore->average_score, 1) < 5)
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                            <span class="la la-star-o"></span>
+                            @elseif (round($order->course->averageReviewScore->average_score, 1) == 5 || round($course->averageReviewScore->average_score, 1) < 5)
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                            <span class="la la-star"></span>
+                        @endif
                     </div>
-                    <span class="rating-total pl-1">(20,230)</span>
+                    <span class="rating-total pl-1">({{ count($order->course->reviews) }})</span>
                 </div><!-- end rating-wrap -->
                 <ul class="card-duration d-flex align-items-center fs-15 pb-2">
                     <li class="mr-2">
@@ -76,9 +107,14 @@ My Courses | Easy Learning
                     @endif
                     <div class="card-action-wrap pl-3">
                         <a href="course-details.html" class="icon-element icon-element-sm shadow-sm cursor-pointer ml-1 text-success" data-toggle="tooltip" data-placement="top" data-title="View"><i class="la la-eye"></i></a>
-                        <div class="icon-element icon-element-sm shadow-sm cursor-pointer ml-1 text-secondary" data-toggle="tooltip" data-placement="top" data-title="Edit"><i class="la la-edit"></i></div>
                         <div class="icon-element icon-element-sm shadow-sm cursor-pointer ml-1 text-danger" data-toggle="tooltip" data-placement="top" title="Delete">
-                            <span data-toggle="modal" data-target="#itemDeleteModal" class="w-100 h-100 d-inline-block"><i class="la la-trash"></i></span>
+                            <form action="{{ route('user.delete_course', $order->id) }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" style="border: none; background-color: transparent;">
+                                    <span data-toggle="modal" data-target="#itemDeleteModal" class="w-100 h-100 d-inline-block"><i class="la la-trash"></i></span>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

@@ -17,6 +17,7 @@ class Order extends Model
         'course_title',
         'course_image',
         'course_price',
+        'is_visible_to_user',
     ];
 
 

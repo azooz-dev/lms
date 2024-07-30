@@ -16,8 +16,7 @@
         </div>
         <div class="ms-auto">
             <div class="btn-group">
-                {{-- <a href="{{ route('admin.add_subCategory') }}" class="btn btn-primary">Add Blog Subcategory</a> --}}
-                <button class="btn btn-primary" id="add-btn" data-bs-toggle="modal" data-bs-target="#create-category-modal">Add Blog Subcategory</button>
+                <button class="btn btn-primary" id="add-btn" data-bs-toggle="modal" data-bs-target="#create-category-modal">Add Blog Category</button>
             </div>
         </div>
     </div>

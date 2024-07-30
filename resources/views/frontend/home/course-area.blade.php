@@ -46,7 +46,7 @@
                                         @endif
                                     </div>
                                 </div><!-- end card-image -->
-                                <div class="card-body" style="padding:1.6rem 2.6rem;">
+                                <div class="card-body p-lg-4">
                                     <h6 class="ribbon ribbon-blue-bg fs-14 mb-3">{{ $course->course_level }}</h6>
                                     <h5 class="card-title"><a href="{{ route('course_details', ['id' => $course->id, 'slug' => $course->slug]) }}">{{ $course->title }}</a></h5>
                                     <p class="card-text"><a href="{{ route('instructor_details', $course->instructor->id) }}">{{ $course->instructor->name }}</a></p>
@@ -90,7 +90,7 @@
                                                 <span class="la la-star"></span>
                                             @endif
                                         </div>
-                                        <span class="rating-total pl-1">({{count($course->reviews) }})</span>
+                                        <span class="rating-total pl-1">({{ count($course->reviews) }})</span>
                                     </div><!-- end rating-wrap -->
                                     <div class="d-flex justify-content-between align-items-center">
                                         @if ($course->discount_price > 0)
@@ -233,8 +233,8 @@
     <div id="tooltip_content_{{ $course->id }}">
         <div class="card card-item">
             <div class="card-body">
-                <p class="card-text pb-2">By <a href="teacher-detail.html">{{ $course->instructor->name }}</a></p>
-                <h5 class="card-title pb-1"><a href="course-details.html">{{ $course->name }}</a></h5>
+                <p class="card-text pb-2">By <a href="{{ route('instructor_details', $course->instructor->id) }}">{{ $course->instructor->name }}</a></p>
+                <h5 class="card-title-1 pb-1"><a href="{{ route('course_details', ['id' => $course->id, 'slug' => $course->slug]) }}">{{ $course->name }}</a></h5>
                 <div class="d-flex align-items-center pb-1">
                     @if ($course->best_seller == 1)
                     <h6 class="ribbon fs-14 mr-2">Bestseller</h6>
@@ -261,5 +261,75 @@
     </div>
 </div>
 
+
+
+<!-- Start Add To Wishlist -->
+<script>
+    function addToWishlist(courseId) {
+        // Determine the theme outside of the fetch request
+        const theme = localStorage.getItem('theme') || document.body.className;
+        const isDarkMode = theme === 'dark';
+
+        // Define the Toast constant outside of the fetch request
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 4000,
+            didOpen: () => {
+                if (isDarkMode) {
+                    // Dark mode styles
+                    Swal.getPopup().style.backgroundColor = '#333';
+                    Swal.getTitle().style.color = '#fff';
+                    Swal.getContent().style.color = '#fff';
+                } else {
+                    // Light mode styles (optional, as SweetAlert2 defaults to light mode)
+                    Swal.getPopup().style.backgroundColor = '#fff';
+                    Swal.getTitle().style.color = '#000';
+                    Swal.getContent().style.color = '#000';
+                }
+            }
+        });
+
+        const url = '{{ route('wishlist.store')}}';
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                'id': courseId
+            })
+        })
+        .then(response => response.json()) // Parse the response as JSON
+        .then(data => {
+            // Check if the response contains an error message
+            if (data.error) {
+                // Throw an error with the error message from the response
+                throw new Error(data.error);
+            }
+            // If there's no error, proceed with the success message
+            Toast.fire({
+                icon: 'success',
+                title: data.success
+            });
+            console.log(data);
+        })
+        .catch(error => {
+            // Handle network errors or issues with the fetch request, including the error message from the response
+            Toast.fire({
+                icon: 'error',
+                title: error.message // Display the error message
+            });
+        });
+    }
+</script>
+<!-- End Add To Wishlist -->
+{{-- MAIL_MAILER=smtp
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=314f9d9fe7fda6
+MAIL_PASSWORD=27d7d0e0939152 --}}
 
 @endforeach

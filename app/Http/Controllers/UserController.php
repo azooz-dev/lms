@@ -141,7 +141,7 @@ class UserController extends Controller
             'photo' => 'sometimes|nullable|image|mimes:jpg,jpeg,png|max:2048',
             'phone' => 'required|string|max:20',
             'address' => 'required|string|max:255',
-            'bio' => 'nullable|string|max:255',
+            'bio' => 'nullable|string',
         ]);
 
         try {
