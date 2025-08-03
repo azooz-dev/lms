@@ -48,9 +48,15 @@ class CategoryController extends Controller
                 throw new Exception('File not found or not readable.');
             }
 
+            // Ensure directory exists
+            $uploadPath = 'storage/upload/category_images/';
+            if (!file_exists(public_path($uploadPath))) {
+                mkdir(public_path($uploadPath), 0755, true);
+            }
+
             // Process the image
             $img = $manager->read($request->file('image'))->resize(370, 246)->toJpeg(80);
-            $img->save('storage/upload/category_images/' . $data['image']);
+            $img->save($uploadPath . $data['image']);
             
             $data['category_slug'] = strtolower(str_replace(' ', '-', $data['category_name']));
             Category::create($data);
@@ -102,8 +108,15 @@ class CategoryController extends Controller
 
                 // Upload and resize the new image
                 $data['image'] = hexdec(uniqid()) . '.' . $request->file('image')->getClientOriginalExtension();
+                
+                // Ensure directory exists
+                $uploadPath = 'storage/upload/category_images/';
+                if (!file_exists(public_path($uploadPath))) {
+                    mkdir(public_path($uploadPath), 0755, true);
+                }
+
                 $img = $manager->read($request->file('image'))->resize('370', '246')->toJpeg(80); // For Process Image
-                $img->save('storage/upload/category_images/' . $data['image']);
+                $img->save($uploadPath . $data['image']);
 
                 // Update the category with new data
                 $data['category_slug'] = strtolower(str_replace(' ', '-', $data['category_name']));
