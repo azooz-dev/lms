@@ -66,8 +66,21 @@ Route::controller(UserController::class)->group(function () {
     });
 });
 
-Route::get('/', 'UserController@index')->name('index');
 
+Route::get('/gd-test', function () {
+    if (!function_exists('imagecreatefromstring')) {
+        return '❌ imagecreatefromstring() not available';
+    }
+
+    if (!extension_loaded('gd')) {
+        return '❌ GD extension not loaded';
+    }
+
+    return '✅ GD and imagecreatefromstring() are working!';
+});
+
+
+Route::get('/', 'UserController@index')->name('index');
 
 // Admin Group Middleware
 Route::controller(AdminController::class)->group(function () {
@@ -233,8 +246,6 @@ Route::controller(AdminController::class)->group(function () {
     // All Instructors Routes
     Route::get('/become/instructor', 'AdminController@become_instructor')->name('become_instructor');
     Route::post('/instructor/register', 'AdminController@instructor_register')->name('register_instructor');
-
-
 });
 
 Route::get('/admin/login', 'AdminController@login')->name('admin.login')->middleware(RedirectIfAuthenticated::class);
@@ -310,7 +321,6 @@ Route::controller(InstructorController::class)->prefix('instructor')->group(func
         Route::controller(ReviewController::class)->group(function () {
             Route::get('/all/reviews/{id}', 'instructor_reviews')->name('instructor.reviews');
         });
-
     });
 });
 

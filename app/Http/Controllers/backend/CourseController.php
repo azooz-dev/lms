@@ -10,9 +10,7 @@ use Illuminate\Http\Request;
 use App\Models\Course_Lecture;
 use App\Models\Course_Section;
 use App\Http\Controllers\Controller;
-use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Drivers\Imagick\Driver;
 
 class CourseController extends Controller
 {
@@ -71,14 +69,12 @@ class CourseController extends Controller
         ]);
 
         try {
-            // Create an image manager instance with the GD driver
-            $manager = new ImageManager(new Driver());
-
+            $image = $request->file('image');
             // Get the image file name with extension
-            $imgName = hexdec(uniqid()) . '.' . $request->file('image')->getClientOriginalExtension();
+            $imgName = hexdec(uniqid()) . '.' . $image->getClientOriginalExtension();
 
             // Get the real path of the uploaded file
-            $path = $request->file('image')->getRealPath();
+            $path = $image->getRealPath();
 
             // Check if the file exists and is readable
             if (!file_exists($path) || !is_readable($path)) {
@@ -86,10 +82,11 @@ class CourseController extends Controller
             }
 
             // Process the image
-            $img = $manager->read($request->file('image'))->resize(370, 246)->toJpeg(80);
+            $resizedPath = public_path('storage/upload/course/images/' . $imgName);
+            resizeAndSaveImage($image, 370, 246, $resizedPath);
 
             // Save the image to storage
-            $img->save('storage/upload/course/images/' . $imgName);
+            // $img->save('storage/upload/course/images/' . $imgName);
 
             // Get the video file from the request
             $video = $request->file('video_link');
@@ -148,7 +145,7 @@ class CourseController extends Controller
         } catch (\Exception $e) {
             // Set an error message and redirect back to the form
             $notification = [
-                'message' =>  'Oops! something went wrong, Please try again.',
+                'message' =>  'Oops! something went wrong, Please try again.' . $e->getMessage(),
                 'alert-type' => 'error',
             ];
 
@@ -197,30 +194,19 @@ class CourseController extends Controller
 
         try {
             if ($request->hasFile('image')) {
-                // For resize image
-                $manager = new ImageManager(new Driver());
+                $data['image'] = hexdec(uniqid()) . '.' . $request->file('image')->getClientOriginalExtension();
+
+                $resizedPath = public_path('storage/upload/course/images/' . $data['image']);
+                resizeAndSaveImage($request->file('image'), 370, 246, $resizedPath);
 
                 // If the file exists in database and exists in storage folder
-                if (!empty($course->image) && Storage::exists('public/upload/course/images/' . $course->image)) {
-                    Storage::delete('public/upload/course/images/' . $course->image);
+                if (!empty($course->image) && file_exists('public/upload/course/images/' . $course->image)) {
+                    unlink('public/upload/course/images/' . $course->image);
                 }
 
-                $imgName = date('YmdHis') . '.' . $request->file('image')->getClientOriginalExtension();
-                // Get the real path of the uploaded file
-                $path = $request->file('image')->getRealPath();
-
-                // Check if the file exists and is readable
-                if (!file_exists($path) || !is_readable($path)) {
-                    throw new \Exception('File not found or not readable.');
-                }
-
-                $img = $manager->read($request->file('image'))->resize(370, 246)->toJpeg(80);
-
-                // Save the image to storage
-                $img->save('storage/upload/course/images/' . $imgName);
 
                 $data = $request->except('image');
-                $data['image'] = $imgName;
+                $data['image'] = $data['image'];
             } else {
                 $data = $request->except('image');
             }

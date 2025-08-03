@@ -6,13 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Drivers\Imagick\Driver;
-use Intervention\Image\ImageManager;
 
 class CategoryController extends Controller
 {
-
     public function all_categories()
     {
         $categories = Category::latest()->get();
@@ -32,27 +28,23 @@ class CategoryController extends Controller
 
     public function store_category(Request $request)
     {
-        $data = $request->validate([
-            'category_name' => 'required|string',
-            'image' => 'required',
+        $request->validate([
+            'category_name' => 'required|string|max:255',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        
         try {
-            $manager = new ImageManager(new Driver());
-            $data['image'] = hexdec(uniqid()) . '.' . $request->file('image')->getClientOriginalExtension();
-            $path = $request->file('image')->getRealPath(); // Get the real path of the uploaded file
+            $image = $request->file('image');
+            $filename = hexdec(uniqid()) . '.' . $image->getClientOriginalExtension();
+            $resizedPath = public_path("storage/upload/category_images/{$filename}");
+            resizeAndSaveImage($image, 370, 246, $resizedPath);
 
-            // Check if the file exists and is readable
-            if (!file_exists($path) || !is_readable($path)) {
-                throw new Exception('File not found or not readable.');
-            }
+            $data = [
+                'category_name' => $request->category_name,
+                'category_slug' => strtolower(str_replace(' ', '-', $request->category_name)),
+                'image' => $filename,
+            ];
 
-            // Process the image
-            $img = $manager->read($request->file('image'))->resize(370, 246)->toJpeg(80);
-            $img->save('storage/upload/category_images/' . $data['image']);
-            
-            $data['category_slug'] = strtolower(str_replace(' ', '-', $data['category_name']));
             Category::create($data);
 
             $notification = array(
@@ -79,7 +71,8 @@ class CategoryController extends Controller
      * @return RedirectResponse
      * @throws Exception
      */
-    public function update_category(Request $request, string $id) {
+    public function update_category(Request $request, string $id)
+    {
         // Get the category object
         $category = Category::find($id);
         // Validate the request
@@ -90,20 +83,17 @@ class CategoryController extends Controller
 
         try {
             // If the image is provided, upload and resize it
-            if($request->hasFile('image')) {
-                // For resize image
-                $manager = new ImageManager(new Driver());
+            if ($request->hasFile('image')) {
+                $data['image'] = hexdec(uniqid()) . '.' . $request->file('image')->getClientOriginalExtension();
+
+                $resizedPath = public_path('storage/upload/category_images/' . $data['image']);
+                resizeAndSaveImage($request->file('image'), 370, 246, $resizedPath);
 
                 // If the file exists in database and exists in storage folder
-                if(!empty($category->image) && Storage::exists('public/upload/category_images/' . $category->image)) {
+                if (!empty($category->image) && file_exists('public/upload/category_images/' . $category->image)) {
                     // Delete the old image from storage
-                    Storage::delete('public/upload/category_images/' . $category->image);
+                    unlink('public/upload/category_images/' . $category->image);
                 }
-
-                // Upload and resize the new image
-                $data['image'] = hexdec(uniqid()) . '.' . $request->file('image')->getClientOriginalExtension();
-                $img = $manager->read($request->file('image'))->resize('370', '246')->toJpeg(80); // For Process Image
-                $img->save('storage/upload/category_images/' . $data['image']);
 
                 // Update the category with new data
                 $data['category_slug'] = strtolower(str_replace(' ', '-', $data['category_name']));
@@ -127,8 +117,8 @@ class CategoryController extends Controller
                     'alert-type' => 'success',
                 );
                 return redirect()->route('admin.all_categories')->with($notification);
-            } 
-        }catch(Exception $e) {
+            }
+        } catch (Exception $e) {
             // Return an error message
             $notification = array(
                 'message' => 'Oops! something went wrong.',
@@ -139,9 +129,10 @@ class CategoryController extends Controller
     }
 
 
-    public function destory_category(string $id) {
+    public function destory_category(string $id)
+    {
         $category = Category::find($id);
-    
+
         // Check if the category has any subcategories
         if ($category->subCategories()->exists()) {
             // If subcategories exist, return an error message
@@ -151,17 +142,17 @@ class CategoryController extends Controller
             );
             return back()->with($notification);
         }
-    
+
         // If no subcategories exist, proceed with the deletion
         try {
             // Check if the category has an image and delete it from storage
-            if (!empty($category->image) && Storage::exists('public/upload/category_images/' . $category->image)) {
-                Storage::delete('public/upload/category_images/' . $category->image);
+            if (!empty($category->image) && file_exists('public/upload/category_images/' . $category->image)) {
+                unlink('public/upload/category_images/' . $category->image);
             }
-    
+
             // Delete the category
             $category->delete();
-    
+
             // Return a success message
             $notification = array(
                 'message' => 'Category deleted successfully.',

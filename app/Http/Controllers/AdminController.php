@@ -102,7 +102,6 @@ class AdminController extends Controller
             ];
 
             return redirect()->back()->with($notification);
-
         } catch (\Exception $e) {
             $notification = [
                 'message' => 'Something went wrong. Please try again.',
@@ -170,7 +169,8 @@ class AdminController extends Controller
 
 
 
-    public function all_instructors(): View {
+    public function all_instructors(): View
+    {
         $instructors = User::where('role', 'instructor')->latest()->get();
         return view('admin.backend.instructor.all_instructors', compact('instructors'));
     }
@@ -187,7 +187,7 @@ class AdminController extends Controller
         try {
             // Find the instructor
             $instructor = User::find($id);
-    
+
             // Toggle the instructor status
             if ($instructor->status == '1') {
                 $instructor->status = '0';
@@ -197,17 +197,18 @@ class AdminController extends Controller
 
             // Save the changes
             $instructor->save();
-    
+
             // Return a success response
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
-            return response()->json(['error' => false , 'message' => $e->getMessage()], 500);
+            return response()->json(['error' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
 
-        
-    public function become_instructor() {
+
+    public function become_instructor()
+    {
         return view('frontend.instructor.become_instructor');
     }
 
@@ -237,7 +238,7 @@ class AdminController extends Controller
             $data['photo'] = date('YmdHis') . '_' . $request->file('photo')->getClientOriginalName();
             $request->file('photo')->storeAs('public/upload/instructor_images', $data['photo']);
         }
-        try{
+        try {
             // Create and save the new instructor
             User::create([
                 'name' => $validatedData['name'],
@@ -258,7 +259,7 @@ class AdminController extends Controller
             );
 
             return redirect()->route('instructor.login')->with($notification);
-        }catch(\Exception $e) {
+        } catch (\Exception $e) {
             $notification = array(
                 'message' => 'Something went wrong. Please try again.',
                 'alert-type' => 'error',
@@ -268,7 +269,8 @@ class AdminController extends Controller
     }
 
 
-    public function all_courses() {
+    public function all_courses()
+    {
         $courses = Course::latest()->get();
         return view('admin.backend.course.all_courses', compact('courses'));
     }
@@ -304,24 +306,28 @@ class AdminController extends Controller
     }
 
 
-    public function course_details(string $id) {
+    public function course_details(string $id)
+    {
         $course = Course::find($id);
         return view('admin.backend.course.course_details', compact('course'));
     }
 
-    public function all_admins() {
+    public function all_admins()
+    {
         $admins = User::where('role', 'admin')->get();
 
         return view('admin.backend.pages.admin.all_admins', compact('admins'));
     }
 
-    public function add_admins() {
+    public function add_admins()
+    {
         $roles = Role::all();
 
         return view('admin.backend.pages.admin.add_admins', compact('roles'));
     }
 
-    public function store_admin(Request $request) {
+    public function store_admin(Request $request)
+    {
 
 
         try {
@@ -336,19 +342,18 @@ class AdminController extends Controller
             ]);
             $data['role'] = 'admin';
             $data['password'] = Hash::make($data['password']);
-    
+
             $admin = User::create($data);
-    
+
             $admin->assignRole($request->role);
-    
+
             $notification = [
                 'message' => 'Admin created successfully.',
                 'alert-type' => 'success',
             ];
-    
-            return redirect()->route('admin.all_admins')->with($notification);
 
-        } catch(Exception $e) {
+            return redirect()->route('admin.all_admins')->with($notification);
+        } catch (Exception $e) {
 
             $notification = [
                 'message' => 'Something went wrong. Please try again.',
@@ -359,38 +364,41 @@ class AdminController extends Controller
         }
     }
 
-    public function edit_admin(string $id) {
+    public function edit_admin(string $id)
+    {
 
         $admin = User::find($id);
         $roles = Role::all();
         return view('admin.backend.pages.admin.edit_admin', compact('admin', 'roles'));
     }
 
-    public function update_admin(Request $request, string $id) {
+    public function update_admin(Request $request, string $id)
+    {
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username,' . $id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $id],
+            'phone' => ['required', 'string', 'max:20'],
+            'photo' => ['nullable', 'max:2048'],
+            'address' => ['required', 'string', 'max:255'],
+        ]);
 
         try {
-            $data = $request->validate([
-                'name' => ['required', 'string', 'max:255'],
-                'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$id],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$id],
-                'phone' => ['required', 'string', 'max:20'],
-                'photo' => ['nullable', 'max:2048'],
-                'address' => ['required', 'string', 'max:255'],
-            ]);
             $data['role'] = 'admin';
-    
+
             $admin = User::find($id);
             $admin->update($data);
-    
+
             $admin->syncRoles($request->role);
-    
+
             $notification = [
                 'message' => 'Admin updated successfully.',
                 'alert-type' => 'success',
             ];
-    
+
             return redirect()->route('admin.all_admins')->with($notification);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
 
             $notification = [
                 'message' => 'Something went wrong. Please try again.',
@@ -401,7 +409,8 @@ class AdminController extends Controller
         }
     }
 
-    public function delete_admin(string $id) {
+    public function delete_admin(string $id)
+    {
 
         try {
             User::find($id)->delete();
@@ -412,7 +421,7 @@ class AdminController extends Controller
             );
 
             return redirect()->back()->with($notification);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
 
             $notification = array(
                 'message' => 'Oops, something went wrong. Please try again',

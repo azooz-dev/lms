@@ -22,15 +22,6 @@
         </li>
         
 
-        <li class="menu-label">UI Elements</li>
-        <li>
-            <a href="widgets.html">
-                <div class="parent-icon"><i class='bx bx-cookie'></i>
-                </div>
-                <div class="menu-title">Widgets</div>
-            </a>
-        </li>
-
         @can('category.menu')
             <li>
                 <a href="javascript:;" class="has-arrow">
@@ -190,7 +181,7 @@
         @endcan
 
 
-        @can('rolepermission.menu')
+        @can('role&permission.menu')
             <li class="menu-label">Role & Permissions</li>
             <li>
                 <a class="has-arrow" href="javascript:;">
