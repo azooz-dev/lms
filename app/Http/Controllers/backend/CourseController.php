@@ -85,11 +85,17 @@ class CourseController extends Controller
                 throw new \Exception('File not found or not readable.');
             }
 
+            // Ensure directory exists
+            $uploadPath = 'storage/upload/course/images/';
+            if (!file_exists(public_path($uploadPath))) {
+                mkdir(public_path($uploadPath), 0755, true);
+            }
+
             // Process the image
             $img = $manager->read($request->file('image'))->resize(370, 246)->toJpeg(80);
 
             // Save the image to storage
-            $img->save('storage/upload/course/images/' . $imgName);
+            $img->save($uploadPath . $imgName);
 
             // Get the video file from the request
             $video = $request->file('video_link');
@@ -97,8 +103,14 @@ class CourseController extends Controller
             // Get the video file name with extension
             $videoName = date('YmdHis') . '.' . $video->getClientOriginalExtension();
 
+            // Ensure video directory exists
+            $videoUploadPath = 'storage/upload/course/videos/';
+            if (!file_exists(public_path($videoUploadPath))) {
+                mkdir(public_path($videoUploadPath), 0755, true);
+            }
+
             // Save the video to storage
-            $video->move(public_path('storage/upload/course/videos/'), $videoName);
+            $video->move(public_path($videoUploadPath), $videoName);
 
             // Create a new course object
             $course = new Course([
@@ -214,10 +226,16 @@ class CourseController extends Controller
                     throw new \Exception('File not found or not readable.');
                 }
 
+                // Ensure directory exists
+                $uploadPath = 'storage/upload/course/images/';
+                if (!file_exists(public_path($uploadPath))) {
+                    mkdir(public_path($uploadPath), 0755, true);
+                }
+
                 $img = $manager->read($request->file('image'))->resize(370, 246)->toJpeg(80);
 
                 // Save the image to storage
-                $img->save('storage/upload/course/images/' . $imgName);
+                $img->save($uploadPath . $imgName);
 
                 $data = $request->except('image');
                 $data['image'] = $imgName;

@@ -88,9 +88,15 @@ class SettingController extends Controller
             if($request->hasFile('logo')) {
                 $manager = new ImageManager(new Driver());
     
+                // Ensure directory exists
+                $uploadPath = 'storage/upload/logo/';
+                if (!file_exists(public_path($uploadPath))) {
+                    mkdir(public_path($uploadPath), 0755, true);
+                }
+
                 $data['logo'] = hexdec(uniqid()) . '.' . $request->file('logo')->getClientOriginalExtension();
                 $img = $manager->read($request->file('logo'))->resize('140', '41'); // For Process Image
-                $img->save('storage/upload/logo/' . $data['logo'], 100, 'png');
+                $img->save($uploadPath . $data['logo'], 100, 'png');
             }
     
             $site->update($data);

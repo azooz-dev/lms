@@ -115,9 +115,15 @@ class BlogController extends Controller
                 throw new Exception('File not found or not readable.');
             }
 
+            // Ensure directory exists
+            $uploadPath = 'storage/upload/posts_images/';
+            if (!file_exists(public_path($uploadPath))) {
+                mkdir(public_path($uploadPath), 0755, true);
+            }
+
             // Process the image
             $img = $manager->read($request->file('image'))->resize(370, 247)->toJpeg(80);
-            $img->save('storage/upload/posts_images/' . $data['image']);
+            $img->save($uploadPath . $data['image']);
 
             $post = POST::create($data);
 
@@ -195,11 +201,17 @@ class BlogController extends Controller
                 // Get the file name with extension
                 $data['image'] = hexdec(uniqid()) . '.' . $request->file('image')->getClientOriginalExtension();
 
+                // Ensure directory exists
+                $uploadPath = 'storage/upload/posts_images/';
+                if (!file_exists(public_path($uploadPath))) {
+                    mkdir(public_path($uploadPath), 0755, true);
+                }
+
                 // Process the image
                 $img = $manager->read($request->file('image'))->resize(370, 247)->toJpeg(80);
 
                 // Save the image to storage
-                $img->save('storage/upload/posts_images/' . $data['image']);
+                $img->save($uploadPath . $data['image']);
             }
 
             // Update the post data
