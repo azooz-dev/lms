@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\backend;
 
+use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SubCategory\StoreSubCategoryRequest;
+use App\Http\Requests\SubCategory\UpdateSubCategoryRequest;
 use App\Models\Category;
 use App\Models\SubCategory;
 use Exception;
-use Illuminate\Http\Request;
 
 class SubCategoryController extends Controller
 {
@@ -24,32 +26,21 @@ class SubCategoryController extends Controller
         return view('admin.backend.subCategory.add_subCategory', compact('categories'));
     }
 
-    public function store_subCategory(Request $request)
+    public function store_subCategory(StoreSubCategoryRequest $request)
     {
-
-        $data = $request->validate([
-            'category_id' => 'required',
-            'subCategory_name' => 'required|string',
-        ]);
-
+        $data = $request->validated();
         $data['subCategory_slug'] = strtolower(str_replace(' ', '-', $data['subCategory_name']));
 
         try {
             SubCategory::create($data);
 
-            $notification = [
-                'message' => 'Subcategory added successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('admin.all_subCategories')->with($notification);
+            return redirect()
+                ->route('admin.all_subCategories')
+                ->with(FlashNotification::success('Subcategory added successfully.'));
         } catch (Exception $e) {
-            $notification = [
-                'message' => 'Oops! something went wrong.'.$e->getMessage(),
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
@@ -61,53 +52,36 @@ class SubCategoryController extends Controller
         return view('admin.backend.subCategory.edit_subCategory', compact('subCategory', 'categories'));
     }
 
-    public function update_subCategory(Request $request, string $id)
+    public function update_subCategory(UpdateSubCategoryRequest $request, string $id)
     {
-
-        $data = $request->validate([
-            'category_id' => 'required',
-            'subCategory_name' => 'required|string',
-        ]);
-
+        $data = $request->validated();
         $data['subCategory_slug'] = strtolower(str_replace(' ', '-', $data['subCategory_name']));
 
         try {
             SubCategory::find($id)->update($data);
 
-            $notification = [
-                'message' => 'Subcategory updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('admin.all_subCategories')->with($notification);
+            return redirect()
+                ->route('admin.all_subCategories')
+                ->with(FlashNotification::success('Subcategory updated successfully.'));
         } catch (Exception $e) {
-            $notification = [
-                'message' => 'Oops! something went wrong.'.$e->getMessage(),
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
     public function destroy_subCategory(string $id)
     {
-
         try {
             SubCategory::find($id)->delete();
-            $notification = [
-                'message' => 'Subcategory deleted successfully.',
-                'alert-type' => 'success',
-            ];
 
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::success('Subcategory deleted successfully.'));
         } catch (Exception $e) {
-            $notification = [
-                'message' => 'Oops! something went wrong.'.$e->getMessage(),
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 }
