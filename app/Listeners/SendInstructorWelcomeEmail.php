@@ -19,4 +19,3 @@ class SendInstructorWelcomeEmail implements ShouldQueue
         Mail::to($event->instructor->email)->queue(new InstructorWelcome($event->instructor));
     }
 }
-

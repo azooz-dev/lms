@@ -11,7 +11,9 @@ use Illuminate\Queue\SerializesModels;
 
 class ReviewSubmitted
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     /**
      * Create a new event instance.
@@ -20,4 +22,3 @@ class ReviewSubmitted
         public readonly Review $review
     ) {}
 }
-

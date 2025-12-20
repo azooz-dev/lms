@@ -11,7 +11,9 @@ use Illuminate\Queue\SerializesModels;
 
 class OrderPlaced
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     /**
      * Create a new event instance.
@@ -23,4 +25,3 @@ class OrderPlaced
         public readonly string $customerName
     ) {}
 }
-

@@ -19,4 +19,3 @@ class NotifyInstructorOfNewReview implements ShouldQueue
         $instructor?->notify(new NewReviewReceived($event->review));
     }
 }
-

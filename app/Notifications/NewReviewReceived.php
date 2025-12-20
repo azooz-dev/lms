@@ -62,4 +62,3 @@ class NewReviewReceived extends Notification implements ShouldQueue
         ];
     }
 }
-

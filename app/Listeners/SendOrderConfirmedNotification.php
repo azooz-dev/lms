@@ -20,4 +20,3 @@ class SendOrderConfirmedNotification implements ShouldQueue
         Mail::to($event->payment->email)->queue(new OrderConfirm($event->payment));
     }
 }
-
