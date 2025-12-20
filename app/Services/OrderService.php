@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Events\OrderConfirmed;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Repositories\Contracts\OrderRepositoryInterface;
+use App\Repositories\Contracts\PaymentRepositoryInterface;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -14,14 +16,17 @@ use Illuminate\Support\Facades\Storage;
 
 class OrderService
 {
+    public function __construct(
+        private readonly OrderRepositoryInterface $orderRepository,
+        private readonly PaymentRepositoryInterface $paymentRepository
+    ) {}
+
     /**
      * Get pending payments
      */
     public function getPendingPayments(): Collection
     {
-        return Payment::where('status', 'pending')
-            ->orderBy('id', 'DESC')
-            ->get();
+        return $this->paymentRepository->getPendingPayments();
     }
 
     /**
@@ -29,9 +34,7 @@ class OrderService
      */
     public function getConfirmedPayments(): Collection
     {
-        return Payment::where('status', 'Confirm')
-            ->orderBy('id', 'DESC')
-            ->get();
+        return $this->paymentRepository->getConfirmedPayments();
     }
 
     /**
@@ -39,7 +42,7 @@ class OrderService
      */
     public function getPayment(int $id): ?Payment
     {
-        return Payment::find($id);
+        return $this->paymentRepository->find($id);
     }
 
     /**
@@ -47,7 +50,7 @@ class OrderService
      */
     public function confirmOrder(Payment $payment): void
     {
-        $payment->update(['status' => 'Confirm']);
+        $this->paymentRepository->confirm($payment);
 
         // Dispatch event to handle notifications
         OrderConfirmed::dispatch($payment);
@@ -59,7 +62,7 @@ class OrderService
      */
     public function getInstructorOrders(int $instructorId): Collection
     {
-        $orders = Order::where('instructor_id', $instructorId)->get();
+        $orders = $this->orderRepository->getByInstructorId($instructorId);
 
         return $orders->groupBy('payment_id')
             ->map(function ($group) {
@@ -73,9 +76,7 @@ class OrderService
      */
     public function getUserCourses(int $userId): Collection
     {
-        $orders = Order::where('user_id', $userId)
-            ->where('is_visible_to_user', '1')
-            ->get();
+        $orders = $this->orderRepository->getVisibleByUserId($userId);
 
         return $orders->groupBy('course_id')
             ->map(function ($group) {
@@ -88,7 +89,7 @@ class OrderService
      */
     public function hideOrderFromUser(Order $order): void
     {
-        $order->update(['is_visible_to_user' => '0']);
+        $this->orderRepository->hideFromUser($order);
     }
 
     /**

@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Events\InstructorRegistered;
 use App\Models\User;
+use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +14,8 @@ use Illuminate\Support\Facades\Hash;
 class UserService
 {
     public function __construct(
-        private readonly FileUploadService $fileUploadService
+        private readonly FileUploadService $fileUploadService,
+        private readonly UserRepositoryInterface $userRepository
     ) {}
 
     /**
@@ -21,10 +23,7 @@ class UserService
      */
     public function createAdmin(array $data, string $roleName): User
     {
-        $data['role'] = 'admin';
-        $data['password'] = Hash::make($data['password']);
-
-        $admin = User::create($data);
+        $admin = $this->userRepository->createWithRole($data, 'admin');
         $admin->assignRole($roleName);
 
         return $admin;
@@ -170,9 +169,7 @@ class UserService
      */
     public function getAllInstructors(): Collection
     {
-        return User::where('role', 'instructor')
-            ->latest()
-            ->get();
+        return $this->userRepository->getAllInstructors();
     }
 
     /**
@@ -180,7 +177,7 @@ class UserService
      */
     public function getAllAdmins(): Collection
     {
-        return User::where('role', 'admin')->get();
+        return $this->userRepository->getAllAdmins();
     }
 
     /**
@@ -188,7 +185,7 @@ class UserService
      */
     public function getUserById(int $id): ?User
     {
-        return User::find($id);
+        return $this->userRepository->find($id);
     }
 
     /**

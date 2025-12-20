@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Events\OrderPlaced;
-use App\Models\Order;
 use App\Models\Payment;
+use App\Repositories\Contracts\OrderRepositoryInterface;
+use App\Repositories\Contracts\PaymentRepositoryInterface;
 use Stripe\StripeClient;
 use Stripe\Token;
 
 class CheckoutService
 {
     public function __construct(
-        private readonly CouponService $couponService
+        private readonly CouponService $couponService,
+        private readonly OrderRepositoryInterface $orderRepository,
+        private readonly PaymentRepositoryInterface $paymentRepository
     ) {}
 
     /**
@@ -29,14 +32,7 @@ class CheckoutService
      */
     public function hasExistingOrder(array $courseIds, int $userId): bool
     {
-        return Order::where(function ($query) use ($courseIds) {
-            $query->whereHas('course', function ($query) use ($courseIds) {
-                $query->whereIn('course_id', $courseIds);
-            });
-        })
-            ->where('user_id', $userId)
-            ->where('is_visible_to_user', '1')
-            ->exists();
+        return $this->orderRepository->existsForUserAndCourses($courseIds, $userId);
     }
 
     /**
@@ -71,17 +67,7 @@ class CheckoutService
      */
     public function createPayment(array $data): Payment
     {
-        return Payment::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'address' => $data['address'],
-            'cash_delivery' => $data['cash_delivery'],
-            'total_amount' => $data['total_amount'],
-            'payment_type' => 'Direct Payment',
-            'status' => 'Pending',
-            'invoice_number' => 'ESO'.mt_rand(10000000, 99999999),
-        ]);
+        return $this->paymentRepository->createWithInvoice($data);
     }
 
     /**
@@ -90,7 +76,7 @@ class CheckoutService
     public function createOrders(Payment $payment, array $courses, int $userId): void
     {
         foreach ($courses as $course) {
-            Order::create([
+            $this->orderRepository->create([
                 'payment_id' => $payment->id,
                 'course_id' => $course['course_id'],
                 'course_title' => $course['course_title'],
