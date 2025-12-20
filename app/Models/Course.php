@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CourseStatus;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,10 @@ class Course extends Model
         'featured',
         'highest_rated',
         'status',
+    ];
+
+    protected $casts = [
+        'status' => CourseStatus::class,
     ];
 
     public function instructor() {

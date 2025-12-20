@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReviewStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,6 +17,10 @@ class Review extends Model
         'message',
         'instructor_id',
         'status',
+    ];
+
+    protected $casts = [
+        'status' => ReviewStatus::class,
     ];
 
     public function user() {
