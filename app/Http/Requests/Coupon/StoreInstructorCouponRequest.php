@@ -51,4 +51,3 @@ class StoreInstructorCouponRequest extends FormRequest
         ];
     }
 }
-

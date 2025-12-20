@@ -42,4 +42,3 @@ class UpdatePermissionRequest extends FormRequest
         ];
     }
 }
-

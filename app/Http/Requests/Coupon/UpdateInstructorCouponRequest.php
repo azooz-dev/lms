@@ -52,4 +52,3 @@ class UpdateInstructorCouponRequest extends FormRequest
         ];
     }
 }
-

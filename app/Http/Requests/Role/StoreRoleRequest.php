@@ -36,4 +36,3 @@ class StoreRoleRequest extends FormRequest
         ];
     }
 }
-

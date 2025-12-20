@@ -40,4 +40,3 @@ class StorePermissionRequest extends FormRequest
         ];
     }
 }
-

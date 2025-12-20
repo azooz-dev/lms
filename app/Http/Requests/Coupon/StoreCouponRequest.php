@@ -47,4 +47,3 @@ class StoreCouponRequest extends FormRequest
         ];
     }
 }
-

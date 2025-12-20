@@ -61,4 +61,3 @@ class UpdateSiteSettingRequest extends FormRequest
         ];
     }
 }
-

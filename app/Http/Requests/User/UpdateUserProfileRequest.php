@@ -55,4 +55,3 @@ class UpdateUserProfileRequest extends FormRequest
         ];
     }
 }
-

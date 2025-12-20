@@ -36,4 +36,3 @@ class ImportPermissionRequest extends FormRequest
         ];
     }
 }
-

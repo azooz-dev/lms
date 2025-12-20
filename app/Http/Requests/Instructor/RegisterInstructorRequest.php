@@ -62,4 +62,3 @@ class RegisterInstructorRequest extends FormRequest
         ];
     }
 }
-

@@ -59,4 +59,3 @@ class UpdateAdminRequest extends FormRequest
         ];
     }
 }
-

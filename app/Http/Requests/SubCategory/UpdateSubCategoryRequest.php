@@ -42,4 +42,3 @@ class UpdateSubCategoryRequest extends FormRequest
         ];
     }
 }
-

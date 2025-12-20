@@ -77,4 +77,3 @@ class ProcessPaymentRequest extends FormRequest
         ];
     }
 }
-

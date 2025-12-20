@@ -35,4 +35,3 @@ class ApplyCouponRequest extends FormRequest
         ];
     }
 }
-
