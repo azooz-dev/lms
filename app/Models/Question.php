@@ -19,19 +19,23 @@ class Question extends Model
         'read_status',
     ];
 
-    public function course() {
+    public function course()
+    {
         return $this->belongsTo(Course::class, 'course_id', 'id');
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function instructor() {
+    public function instructor()
+    {
         return $this->belongsTo(User::class, 'instructor_id', 'id');
     }
 
-    public function replies(){
+    public function replies()
+    {
         return $this->hasMany(ReplyQuestion::class, 'question_id');
     }
 }

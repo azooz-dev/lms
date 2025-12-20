@@ -23,17 +23,20 @@ class Review extends Model
         'status' => ReviewStatus::class,
     ];
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function reviewsAvg() {
+    public function reviewsAvg()
+    {
         $reviews = $this->where('status', 1)->avg('rating');
 
         return $reviews;
     }
 
-    public function course() {
+    public function course()
+    {
         return $this->belongsTo(Course::class, 'course_id');
     }
 }

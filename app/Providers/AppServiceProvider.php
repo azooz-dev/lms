@@ -3,12 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Category;
-use App\Models\Post;
 use App\Models\SiteSetting;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use PSpell\Config;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,18 +38,17 @@ class AppServiceProvider extends ServiceProvider
             $view->with('user', $user);
         });
 
-
-        if(Schema::hasTable('setting_smtps')) {
+        if (Schema::hasTable('setting_smtps')) {
             $smtp = \App\Models\SettingSmtp::first();
-            if($smtp) {
+            if ($smtp) {
                 $date = [
-                    'driver'     => $smtp->mailer,
-                    'host'       => $smtp->host,
-                    'port'       => $smtp->port,
-                    'username'   => $smtp->username,
-                    'password'   => $smtp->password,
+                    'driver' => $smtp->mailer,
+                    'host' => $smtp->host,
+                    'port' => $smtp->port,
+                    'username' => $smtp->username,
+                    'password' => $smtp->password,
                     'encryption' => $smtp->encryption,
-                    'from'       => [
+                    'from' => [
                         'address' => $smtp->from_address,
                         'name' => 'EASYLMS',
                     ],
@@ -59,6 +56,5 @@ class AppServiceProvider extends ServiceProvider
                 config(['mail' => $date]);
             }
         }
-}
-
+    }
 }

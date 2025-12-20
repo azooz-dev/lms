@@ -20,20 +20,23 @@ class Order extends Model
         'is_visible_to_user',
     ];
 
-
-    public function course() {
+    public function course()
+    {
         return $this->belongsTo(Course::class, 'course_id');
     }
 
-    public function instructor() {
+    public function instructor()
+    {
         return $this->belongsTo(User::class, 'instructor_id', 'id');
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function payment() {
+    public function payment()
+    {
         return $this->belongsTo(Payment::class, 'payment_id', 'id');
     }
 }

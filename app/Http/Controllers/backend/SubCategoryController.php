@@ -10,19 +10,22 @@ use Illuminate\Http\Request;
 
 class SubCategoryController extends Controller
 {
-    
-    public function all_subCategories() {
+    public function all_subCategories()
+    {
         $subCategories = SubCategory::latest()->get();
+
         return view('admin.backend.subCategory.all_subCategories', compact('subCategories'));
     }
 
-
-    public function add_subCategory() {
+    public function add_subCategory()
+    {
         $categories = Category::all();
+
         return view('admin.backend.subCategory.add_subCategory', compact('categories'));
     }
 
-    public function store_subCategory(Request $request) {
+    public function store_subCategory(Request $request)
+    {
 
         $data = $request->validate([
             'category_id' => 'required',
@@ -34,28 +37,32 @@ class SubCategoryController extends Controller
         try {
             SubCategory::create($data);
 
-            $notification = array(
+            $notification = [
                 'message' => 'Subcategory added successfully.',
                 'alert-type' => 'success',
-            );
+            ];
+
             return redirect()->route('admin.all_subCategories')->with($notification);
-        } catch(Exception $e) {
-            $notification = array(
-                'message' => "Oops! something went wrong." . $e->getMessage(),  
+        } catch (Exception $e) {
+            $notification = [
+                'message' => 'Oops! something went wrong.'.$e->getMessage(),
                 'alert-type' => 'error',
-            );
+            ];
+
             return redirect()->back()->with($notification);
         }
     }
 
-    public function edit_subCategory(string $id) {
+    public function edit_subCategory(string $id)
+    {
         $subCategory = SubCategory::find($id);
         $categories = Category::all();
+
         return view('admin.backend.subCategory.edit_subCategory', compact('subCategory', 'categories'));
     }
 
-
-    public function update_subCategory(Request $request, string $id) {
+    public function update_subCategory(Request $request, string $id)
+    {
 
         $data = $request->validate([
             'category_id' => 'required',
@@ -67,35 +74,39 @@ class SubCategoryController extends Controller
         try {
             SubCategory::find($id)->update($data);
 
-            $notification = array(
+            $notification = [
                 'message' => 'Subcategory updated successfully.',
                 'alert-type' => 'success',
-            );
+            ];
+
             return redirect()->route('admin.all_subCategories')->with($notification);
-        } catch(Exception $e) {
-            $notification = array(
-                'message' => "Oops! something went wrong." . $e->getMessage(),  
+        } catch (Exception $e) {
+            $notification = [
+                'message' => 'Oops! something went wrong.'.$e->getMessage(),
                 'alert-type' => 'error',
-            );
+            ];
+
             return redirect()->back()->with($notification);
         }
     }
 
-
-    public function destroy_subCategory(string $id) {
+    public function destroy_subCategory(string $id)
+    {
 
         try {
             SubCategory::find($id)->delete();
-            $notification = array(
+            $notification = [
                 'message' => 'Subcategory deleted successfully.',
                 'alert-type' => 'success',
-            );
+            ];
+
             return redirect()->back()->with($notification);
-        } catch(Exception $e) {
-            $notification = array(
-                'message' => "Oops! something went wrong." . $e->getMessage(),  
+        } catch (Exception $e) {
+            $notification = [
+                'message' => 'Oops! something went wrong.'.$e->getMessage(),
                 'alert-type' => 'error',
-            );
+            ];
+
             return redirect()->back()->with($notification);
         }
     }

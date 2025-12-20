@@ -28,7 +28,6 @@ class ChangeEmailRequest extends FormRequest
         ];
     }
 
-
     public function messages(): array
     {
         return [
@@ -43,7 +42,7 @@ class ChangeEmailRequest extends FormRequest
         ];
     }
 
-    public function attributes() :array
+    public function attributes(): array
     {
         return [
             'old_email' => 'Old email',

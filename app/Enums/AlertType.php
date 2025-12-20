@@ -11,4 +11,3 @@ enum AlertType: string
     case WARNING = 'warning';
     case INFO = 'info';
 }
-

@@ -20,7 +20,7 @@ class Authenticate extends Middleware
         if ($request->is('instructor/*')) {
             return $request->expectsJson() ? null : route('instructor.login');
         }
-        
+
         return $request->expectsJson() ? null : route('login');
     }
 }

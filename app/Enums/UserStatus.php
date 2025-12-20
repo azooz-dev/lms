@@ -22,4 +22,3 @@ enum UserStatus: string
         return $this === self::ACTIVE;
     }
 }
-

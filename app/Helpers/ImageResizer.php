@@ -27,9 +27,8 @@ class ImageResizer
 
         exec($resizeCommand, $output, $returnVar);
 
-        if ($returnVar !== 0 || !file_exists($destinationPath)) {
+        if ($returnVar !== 0 || ! file_exists($destinationPath)) {
             throw new Exception('Unable to resize image');
         }
     }
 }
-

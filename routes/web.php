@@ -21,9 +21,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Facades\Route;
 
-
-
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -48,15 +45,12 @@ Route::controller(UserController::class)->group(function () {
         Route::put('/settings/email/{update}', 'change_email')->name('user.change_email');
         Route::get('/logout', 'logout')->name('user.logout');
 
-
-
         // User Course Routes
         Route::controller(OrderController::class)->group(function () {
             Route::get('/my/courses/{id}', 'my_courses')->name('user.my_course');
             Route::get('/my/course/details/{id}', 'my_course_details')->name('user.course_details');
             Route::delete('/delete/my/course/{id}', 'delete_my_course')->name('user.delete_course');
         });
-
 
         // User Question Routes
         Route::controller(QuestionController::class)->group(function () {
@@ -65,9 +59,6 @@ Route::controller(UserController::class)->group(function () {
         });
     });
 });
-
-
-
 
 Route::get('/', 'UserController@index')->name('index');
 
@@ -95,7 +86,6 @@ Route::controller(AdminController::class)->group(function () {
         Route::post('/update-theme', 'update_theme')->name('update-theme');
         Route::get('/get-theme-preference', 'ThemeController@getThemePreference')->name('get-theme-preference');
 
-
         // All Categories Routes
         Route::controller(CategoryController::class)->group(function () {
 
@@ -107,7 +97,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::delete('/category/delete/{delete}', 'destroy_category')->name('admin.category_destroy')->middleware('permission:category.delete');
         });
 
-        // All SubCategories Routes 
+        // All SubCategories Routes
         Route::controller(SubCategoryController::class)->group(function () {
 
             Route::get('/all/subCategories', 'all_subCategories')->name('admin.all_subCategories')->middleware('permission:subcategory.all');
@@ -117,8 +107,6 @@ Route::controller(AdminController::class)->group(function () {
             Route::put('/subCategory/update/{update}', 'update_subCategory')->name('admin.update_subCategory');
             Route::delete('/subCategory/delete/{delete}', 'destroy_subCategory')->name('admin.subCategory_destroy');
         });
-
-
 
         // All Coupon Routes
         Route::controller(CouponController::class)->group(function () {
@@ -130,7 +118,6 @@ Route::controller(AdminController::class)->group(function () {
             Route::delete('/coupon/delete/{id}', 'destroy_coupon')->name('admin.coupon_destroy')->middleware('permission:coupon.delete');
         });
 
-
         // All Instructors Routes
         Route::get('/all/instructors', 'all_instructors')->name('admin.all_instructors')->middleware('permission:instructor.menu');
         Route::put('/instructor/{id}/status', 'update_instructor_status')->name('admin.update_instructor_status');
@@ -139,7 +126,6 @@ Route::controller(AdminController::class)->group(function () {
         Route::get('/all/courses', 'all_courses')->name('admin.all_courses');
         Route::put('/course/{id}/status', 'update_course_status')->name('admin.update_course_status');
         Route::get('/course/details/{id}', 'course_details')->name('admin.course_details');
-
 
         // All Settings Routes
         Route::controller(SettingController::class)->group(function () {
@@ -157,13 +143,11 @@ Route::controller(AdminController::class)->group(function () {
             Route::get('/confirm/order', 'confirm_order')->name('admin.confirm_order')->middleware('permission:order.menu');
         });
 
-
         // All Reports Routes
         Route::controller(ReportController::class)->group(function () {
             Route::get('/all/reports', 'all_reports')->name('admin.all_reports')->middleware('permission:report.menu');
             Route::post('/date/reports', 'date_reports')->name('admin.date_reports');
         });
-
 
         // All Reviews Routes
         Route::controller(ReviewController::class)->group(function () {
@@ -172,13 +156,11 @@ Route::controller(AdminController::class)->group(function () {
             Route::put('update/review/status/{id}', 'update_review_status')->name('admin.update_review_status');
         });
 
-
         // All Users Active Routes
         Route::controller(UserActiveController::class)->group(function () {
             Route::get('all/users', 'all_users')->name('admin.all_users')->middleware('permission:all.user.menu');
             Route::get('all/Instructors', 'all_Instructors')->name('admin.Instructors')->middleware('permission:all.user.menu');
         });
-
 
         // All Blog Category Routes
         Route::controller(BlogController::class)->group(function () {
@@ -188,7 +170,6 @@ Route::controller(AdminController::class)->group(function () {
             Route::put('/blog/category/update/{id}', 'update_blog_category')->name('admin.update_blog_category');
             Route::delete('/destroy/blog/category/{id}', 'delete_blog_category')->name('admin.blog_category_destroy');
         });
-
 
         // All Blog Posts Routes
         Route::controller(BlogController::class)->group(function () {
@@ -210,7 +191,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::put('/permission/update/{id}', 'update_permission')->name('admin.update_permission');
             Route::delete('/destroy/permission/{id}', 'permission_delete')->name('admin.permission_destroy');
 
-            // All Export Import Files 
+            // All Export Import Files
             Route::get('/export/permission', 'export_permission')->name('admin.export_permission');
             Route::get('/import/permission', 'import_permission')->name('admin.import_Permission');
             Route::post('/import/permission', 'import_permission_file')->name('admin.import_file');
@@ -240,8 +221,6 @@ Route::controller(AdminController::class)->group(function () {
 
 Route::get('/admin/login', 'AdminController@login')->name('admin.login')->middleware(RedirectIfAuthenticated::class);
 
-
-
 // Instructor Group Middleware
 Route::controller(InstructorController::class)->prefix('instructor')->group(function () {
 
@@ -253,7 +232,6 @@ Route::controller(InstructorController::class)->prefix('instructor')->group(func
         Route::put('/update/{update}', 'instructor_update')->name('instructor.update');
         Route::get('/change_password', 'change_password')->name('instructor.change_password');
         Route::put('/update/password/{update}', 'update_password')->name('instructor.update_password');
-
 
         // All Courses Routes
         Route::controller(CourseController::class)->group(function () {
@@ -288,7 +266,6 @@ Route::controller(InstructorController::class)->prefix('instructor')->group(func
             Route::get('/mark/notification/read/{id}', 'mark_notification_read')->name('mark-notification-read');
         });
 
-
         // All Questions Routes
         Route::controller(QuestionController::class)->group(function () {
             Route::get('/all/question/{id}', 'all_instructor_question')->name('instructor.all_questions');
@@ -306,7 +283,6 @@ Route::controller(InstructorController::class)->prefix('instructor')->group(func
             Route::delete('/destroy/coupon/{id}', 'delete_instructor_coupon')->name('instructor.destroy_coupon');
         });
 
-
         // All Instructor Reviews Routes
         Route::controller(ReviewController::class)->group(function () {
             Route::get('/all/reviews/{id}', 'instructor_reviews')->name('instructor.reviews');
@@ -314,11 +290,7 @@ Route::controller(InstructorController::class)->prefix('instructor')->group(func
     });
 });
 
-
 Route::get('/instructor/login', 'InstructorController@login')->name('instructor.login')->middleware(RedirectIfAuthenticated::class);
-
-
-
 
 // All Routes Accessible Without Middleware
 Route::controller(IndexController::class)->group(function () {
@@ -328,16 +300,12 @@ Route::controller(IndexController::class)->group(function () {
     Route::get('/instructor/details/{id}', 'instructor_details')->name('instructor_details');
 });
 
-
-
 Route::controller(WishListController::class)->group(function () {
     Route::post('/wishlist/store', 'store_wishList')->name('wishlist.store');
     Route::get('/wishlist/all', 'wishList_view')->name('user.wishlist');
     Route::get('/all/wishlist/{id}', 'all_wishList')->name('wishlist.all');
     Route::delete('/remove/wishlist/{id}/{course}', 'delete_wishlist')->name('destroy_wishlist');
 });
-
-
 
 Route::controller(CartController::class)->group(function () {
     // Mini Cart
@@ -356,14 +324,12 @@ Route::controller(CartController::class)->group(function () {
     Route::get('/cart/calculation', 'cart_calculation')->name('cart_calculation');
     Route::delete('/remove/coupon', 'remove_coupon')->name('remove_coupon');
 
-
     // Checkout Routes
     Route::get('/checkout', 'checkout')->name('checkout');
 
     // Payment Routes
     Route::post('/payment/process', 'payment_process')->name('payment.process');
 });
-
 
 Route::controller(ReviewController::class)->group(function () {
     Route::post('/store/review/{id}/{course}', 'review_store')->name('review_store');
@@ -375,5 +341,4 @@ Route::controller(BlogController::class)->group(function () {
     Route::get('/all/blog', 'all_blog')->name('blogs');
 });
 
-
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

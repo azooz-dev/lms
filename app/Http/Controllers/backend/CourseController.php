@@ -15,24 +15,24 @@ use Illuminate\Support\Facades\Storage;
 
 class CourseController extends Controller
 {
-
     public function all_courses_by_instructor(string $id)
     {
         $courses = Course::where('instructor_id', $id)->orderBy('id', 'desc')->get();
+
         return view('instructor.course.all_courses', compact('courses'));
     }
 
     public function add_course()
     {
         $categories = Category::orderBy('category_name', 'asc')->get();
+
         return view('instructor.course.add_course', compact('categories'));
     }
 
     /**
      * Returns the list of sub categories based on the given category ID
      *
-     * @param string $id The category ID
-     *
+     * @param  string  $id  The category ID
      * @return \Illuminate\Http\JsonResponse
      */
     public function get_subCategories(string $id)
@@ -51,12 +51,10 @@ class CourseController extends Controller
         }
     }
 
-
     /**
      * Stores the course information to the database
      *
-     * @param \Illuminate\Http\Request $request The request object
-     *
+     * @param  \Illuminate\Http\Request  $request  The request object
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store_course(Request $request)
@@ -72,18 +70,18 @@ class CourseController extends Controller
         try {
             $image = $request->file('image');
             // Get the image file name with extension
-            $imgName = hexdec(uniqid()) . '.' . $image->getClientOriginalExtension();
+            $imgName = hexdec(uniqid()).'.'.$image->getClientOriginalExtension();
 
             // Get the real path of the uploaded file
             $path = $image->getRealPath();
 
             // Check if the file exists and is readable
-            if (!file_exists($path) || !is_readable($path)) {
+            if (! file_exists($path) || ! is_readable($path)) {
                 throw new \Exception('File not found or not readable.');
             }
 
             // Process the image
-            $resizedPath = public_path('storage/upload/course/images/' . $imgName);
+            $resizedPath = public_path('storage/upload/course/images/'.$imgName);
             ImageResizer::resize($image, 370, 246, $resizedPath);
 
             // Save the image to storage
@@ -93,33 +91,33 @@ class CourseController extends Controller
             $video = $request->file('video_link');
 
             // Get the video file name with extension
-            $videoName = date('YmdHis') . '.' . $video->getClientOriginalExtension();
+            $videoName = date('YmdHis').'.'.$video->getClientOriginalExtension();
 
             // Save the video to storage
             $video->move(public_path('storage/upload/course/videos/'), $videoName);
 
             // Create a new course object
             $course = new Course([
-                'category_id'     => $request->category_id,
+                'category_id' => $request->category_id,
                 'sub_category_id' => $request->sub_category_id,
-                'instructor_id'   => auth()->user()->id,
-                'image'           => $imgName,
-                'name'            => $request->name,
-                'title'           => $request->title,
-                'slug'            => strtolower(str_replace(' ', '-', $request->name)),
-                'description'     => $request->description,
-                'video_link'      => $videoName,
-                'course_level'    => $request->level,
-                'duration'        => $request->duration,
-                'resources'       => $request->resources,
-                'selling_price'   => $request->selling_price,
-                'discount_price'  => $request->discount_price,
-                'certificate'     => $request->certificate,
-                'prerequisites'   => $request->prerequisites,
-                'best_seller'     => $request->best_seller,
-                'featured'        => $request->featured,
-                'highest_rated'   => $request->highest_rated,
-                'status'          => '1',
+                'instructor_id' => auth()->user()->id,
+                'image' => $imgName,
+                'name' => $request->name,
+                'title' => $request->title,
+                'slug' => strtolower(str_replace(' ', '-', $request->name)),
+                'description' => $request->description,
+                'video_link' => $videoName,
+                'course_level' => $request->level,
+                'duration' => $request->duration,
+                'resources' => $request->resources,
+                'selling_price' => $request->selling_price,
+                'discount_price' => $request->discount_price,
+                'certificate' => $request->certificate,
+                'prerequisites' => $request->prerequisites,
+                'best_seller' => $request->best_seller,
+                'featured' => $request->featured,
+                'highest_rated' => $request->highest_rated,
+                'status' => '1',
             ]);
 
             // Save the course to get the ID
@@ -146,15 +144,13 @@ class CourseController extends Controller
         } catch (\Exception $e) {
             // Set an error message and redirect back to the form
             $notification = [
-                'message' =>  'Oops! something went wrong, Please try again.' . $e->getMessage(),
+                'message' => 'Oops! something went wrong, Please try again.'.$e->getMessage(),
                 'alert-type' => 'error',
             ];
 
             return back()->with($notification);
         }
     }
-
-
 
     public function edit_course(string $id)
     {
@@ -171,15 +167,11 @@ class CourseController extends Controller
         return view('instructor.course.edit_course', compact('course', 'categories', 'goals'));
     }
 
-
-
-
     /**
      * Update the course information
      *
-     * @param \Illuminate\Http\Request $request The request object
-     * @param string $id The ID of the course
-     *
+     * @param  \Illuminate\Http\Request  $request  The request object
+     * @param  string  $id  The ID of the course
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update_course(Request $request, string $id)
@@ -195,16 +187,15 @@ class CourseController extends Controller
 
         try {
             if ($request->hasFile('image')) {
-                $data['image'] = hexdec(uniqid()) . '.' . $request->file('image')->getClientOriginalExtension();
+                $data['image'] = hexdec(uniqid()).'.'.$request->file('image')->getClientOriginalExtension();
 
-                $resizedPath = public_path('storage/upload/course/images/' . $data['image']);
+                $resizedPath = public_path('storage/upload/course/images/'.$data['image']);
                 resizeAndSaveImage($request->file('image'), 370, 246, $resizedPath);
 
                 // If the file exists in database and exists in storage folder
-                if (!empty($course->image) && file_exists('public/upload/course/images/' . $course->image)) {
-                    unlink('public/upload/course/images/' . $course->image);
+                if (! empty($course->image) && file_exists('public/upload/course/images/'.$course->image)) {
+                    unlink('public/upload/course/images/'.$course->image);
                 }
-
 
                 $data = $request->except('image');
                 $data['image'] = $data['image'];
@@ -219,28 +210,27 @@ class CourseController extends Controller
 
             $course->update($data);
 
-            $notification = array(
+            $notification = [
                 'message' => 'Course updated successfully.',
                 'alert-type' => 'success',
-            );
+            ];
 
             return redirect()->route('instructor.all_courses', auth()->user()->id)->with($notification);
         } catch (\Exception $e) {
-            $notification = array(
+            $notification = [
                 'message' => 'Oops! something went wrong, Please try again.',
                 'alert-type' => 'error',
-            );
+            ];
+
             return back()->with($notification);
         }
     }
 
-
     /**
      * Update the video of the course
      *
-     * @param \Illuminate\Http\Request $request The request object
-     * @param string $id The ID of the course
-     *
+     * @param  \Illuminate\Http\Request  $request  The request object
+     * @param  string  $id  The ID of the course
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update_video(Request $request, string $id)
@@ -249,38 +239,38 @@ class CourseController extends Controller
             $course = Course::find($id);
 
             // If the previous video exists, delete it
-            if (!empty($course->video_link) && Storage::exists('public/upload/course/videos/' . $course->video_link)) {
-                Storage::delete('public/upload/course/videos/' . $course->video_link);
+            if (! empty($course->video_link) && Storage::exists('public/upload/course/videos/'.$course->video_link)) {
+                Storage::delete('public/upload/course/videos/'.$course->video_link);
             }
 
             // Generate a unique name for the video file
-            $videoName = date('YmdHis') . '.' . $request->file('video_link')->getClientOriginalExtension();
+            $videoName = date('YmdHis').'.'.$request->file('video_link')->getClientOriginalExtension();
 
             // Store the video file in the 'public/upload/course/videos' directory
             $request->file('video_link')->storeAs('public/upload/course/videos', $videoName);
 
             // Update the course with the new video link
             $course->update([
-                'video_link' => $videoName
+                'video_link' => $videoName,
             ]);
 
-            $notification = array(
+            $notification = [
                 'message' => 'Video updated successfully.',
                 'alert-type' => 'success',
-            );
+            ];
 
             // Redirect the user back to the instructor's all courses page with a success message
             return back()->with($notification);
         } catch (\Exception $e) {
-            $notification = array(
+            $notification = [
                 'message' => 'Oops! something went wrong, Please try again.',
                 'alert-type' => 'error',
-            );
+            ];
+
             // Return an error message if an error occurred
             return back()->with($notification);
         }
     }
-
 
     public function update_goals(Request $request, string $id)
     {
@@ -288,14 +278,15 @@ class CourseController extends Controller
 
         // Filter out any empty values from the course_goals array
         $filteredGoals = array_filter($request->course_goals, function ($value) {
-            return !is_null($value) && $value !== '';
+            return ! is_null($value) && $value !== '';
         });
 
         if (empty($filteredGoals)) {
-            $notification = array(
+            $notification = [
                 'message' => 'Please select at least one goal.',
                 'alert-type' => 'error',
-            );
+            ];
+
             return back()->with($notification);
         } else {
             // Delete existing goals for the course
@@ -308,35 +299,34 @@ class CourseController extends Controller
                 ]);
             }
 
-            $notification = array(
+            $notification = [
                 'message' => 'Course goals updated successfully.',
                 'alert-type' => 'success',
-            );
+            ];
+
             return back()->with($notification);
         }
     }
 
-
-
     /**
      * Delete a course
      *
-     * @param string $id The ID of the course to delete
-     *
+     * @param  string  $id  The ID of the course to delete
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy_course(string $id)
     {
         $course = Course::find($id);
+
         try {
             // If the course has an image, delete it
-            if (!empty($course->image) && Storage::exists('public/upload/course/images/' . $course->image)) {
-                Storage::delete('public/upload/course/images/' . $course->image);
+            if (! empty($course->image) && Storage::exists('public/upload/course/images/'.$course->image)) {
+                Storage::delete('public/upload/course/images/'.$course->image);
             }
 
             // If the course has a video, delete it
-            if (!empty($course->video_link) && Storage::exists('public/upload/course/videos/' . $course->video_link)) {
-                Storage::delete('public/upload/course/videos/' . $course->video_link);
+            if (! empty($course->video_link) && Storage::exists('public/upload/course/videos/'.$course->video_link)) {
+                Storage::delete('public/upload/course/videos/'.$course->video_link);
             }
 
             // Delete the course goals
@@ -345,38 +335,35 @@ class CourseController extends Controller
             // Delete the course
             $course->delete();
 
-            $notification = array(
+            $notification = [
                 'message' => 'Course deleted successfully.',
                 'alert-type' => 'success',
-            );
+            ];
 
             // Redirect the user to the instructor's all courses page
             return redirect()->route('instructor.all_courses', auth()->user()->id)->with($notification);
         } catch (\Exception $e) {
-            $notification = array(
+            $notification = [
                 'message' => 'Oops! something went wrong, Please try again.',
                 'alert-type' => 'error',
-            );
+            ];
+
             // Return an error message if an error occurred
             return back()->with($notification);
         }
     }
 
-
-
     public function create_section(string $id)
     {
         $course = Course::find($id);
+
         return view('instructor.course.section.create_section', compact('course'));
     }
-
 
     /**
      * Store a newly created section in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  string $courseId The ID of the course
-     *
+     * @param  string  $courseId  The ID of the course
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store_section(Request $request, string $courseId)
@@ -395,39 +382,36 @@ class CourseController extends Controller
         return back()->with($notification);  // Redirect the user back to the previous page with the notification message
     }
 
-
-
     public function destroy_section(string $id)
     {
         $section = Course_Section::find($id);
+
         try {
             $section->lectures()->delete();
             $section->delete();
-            $notification = array(
+            $notification = [
                 'message' => 'Section deleted successfully.',
                 'alert-type' => 'success',
-            );
+            ];
+
             return back()->with($notification);
         } catch (\Exception $e) {
-            $notification = array(
+            $notification = [
                 'message' => 'Oops! something went wrong, Please try again.',
                 'alert-type' => 'error',
-            );
+            ];
+
             return back()->with($notification);
         }
     }
-
-
-
 
     /**
      * Store a newly created lecture in storage.
      *
      * This method stores a newly created lecture in the database.
      *
-     * @param \Illuminate\Http\Request $request The request object
-     * @param string $id The ID of the section
-     *
+     * @param  \Illuminate\Http\Request  $request  The request object
+     * @param  string  $id  The ID of the section
      * @return \Illuminate\Http\JsonResponse
      */
     public function store_lecture(Request $request, string $id)
@@ -453,24 +437,20 @@ class CourseController extends Controller
         }
     }
 
-
-
-
     public function edit_lecture(Request $request, string $id)
     {
         $lecture = Course_Lecture::find($id);
+
         return view('instructor.course.lecture.edit_lecture', compact('lecture'));
     }
-
 
     /**
      * Update a lecture in storage.
      *
      * This method updates an existing lecture in the database.
      *
-     * @param \Illuminate\Http\Request $request The request object
-     * @param string $id The ID of the lecture
-     *
+     * @param  \Illuminate\Http\Request  $request  The request object
+     * @param  string  $id  The ID of the lecture
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update_lecture(Request $request, string $id)
@@ -486,24 +466,24 @@ class CourseController extends Controller
                 'message' => 'Course Lecture updated successfully.',
                 'alert-type' => 'success',
             ];
+
             return redirect()->back()->with($notification);  // Redirect the user back with the success message
         } catch (\Exception $e) {  // If an error occurred
             $notification = [  // Create an error message
                 'message' => $e->getMessage(),
                 'alert-type' => 'error',
             ];
+
             return back()->with($notification);  // Return an error message if an error occurred
         }
     }
-
 
     /**
      * Delete a lecture
      *
      * This method deletes a lecture from the database.
      *
-     * @param string $id The ID of the lecture
-     *
+     * @param  string  $id  The ID of the lecture
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy_lecture(string $id)
@@ -514,6 +494,7 @@ class CourseController extends Controller
             'message' => 'Course Lecture deleted successfully.',
             'alert-type' => 'success',
         ];
+
         return back()->with($notification);  // Redirect the user back with the success message
     }
 }

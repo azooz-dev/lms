@@ -18,19 +18,23 @@ class Post extends Model
         'description',
     ];
 
-    public function tags(){
+    public function tags()
+    {
         return $this->belongsToMany(Tag::class)->withTimestamps();
     }
 
-    public function blog_category(){
+    public function blog_category()
+    {
         return $this->belongsTo(BlogCategory::class, 'category_id', 'id');
     }
 
-    public function admin() {
+    public function admin()
+    {
         return $this->belongsTo(User::class, 'admin_id', 'id');
     }
 
-    public function comments() {
+    public function comments()
+    {
         return $this->hasMany(Comment::class, 'post_id', 'id');
     }
 }
