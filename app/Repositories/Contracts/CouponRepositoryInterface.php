@@ -12,4 +12,3 @@ interface CouponRepositoryInterface extends RepositoryInterface
 
     public function isCouponValidForCourse(Coupon $coupon, int $courseId): bool;
 }
-

@@ -34,4 +34,3 @@ interface OrderRepositoryInterface extends RepositoryInterface
 
     public function hideFromUser(Model $order): void;
 }
-

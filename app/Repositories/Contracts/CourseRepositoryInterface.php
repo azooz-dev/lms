@@ -15,4 +15,3 @@ interface CourseRepositoryInterface extends RepositoryInterface
 
     public function updateWithSlug(Course $course, array $data): Course;
 }
-

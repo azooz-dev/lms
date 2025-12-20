@@ -22,4 +22,3 @@ interface UserRepositoryInterface extends RepositoryInterface
 
     public function createWithRole(array $data, string $role): User;
 }
-

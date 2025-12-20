@@ -43,4 +43,3 @@ class CourseRepository extends BaseRepository implements CourseRepositoryInterfa
         return strtolower(str_replace(' ', '-', $name));
     }
 }
-

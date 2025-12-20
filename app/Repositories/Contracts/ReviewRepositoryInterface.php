@@ -19,4 +19,3 @@ interface ReviewRepositoryInterface extends RepositoryInterface
 
     public function toggleStatus(Review $review): Review;
 }
-

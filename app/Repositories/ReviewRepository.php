@@ -50,4 +50,3 @@ class ReviewRepository extends BaseRepository implements ReviewRepositoryInterfa
         return $review;
     }
 }
-

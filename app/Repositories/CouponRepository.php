@@ -27,4 +27,3 @@ class CouponRepository extends BaseRepository implements CouponRepositoryInterfa
         return (int) $coupon->course_id === $courseId;
     }
 }
-

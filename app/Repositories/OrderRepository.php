@@ -111,4 +111,3 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
         $order->update(['is_visible_to_user' => '0']);
     }
 }
-

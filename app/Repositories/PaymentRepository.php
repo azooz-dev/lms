@@ -49,4 +49,3 @@ class PaymentRepository extends BaseRepository implements PaymentRepositoryInter
         $payment->update(['status' => 'Confirm']);
     }
 }
-

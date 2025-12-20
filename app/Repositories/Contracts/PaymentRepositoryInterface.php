@@ -17,4 +17,3 @@ interface PaymentRepositoryInterface extends RepositoryInterface
 
     public function confirm(Payment $payment): void;
 }
-
