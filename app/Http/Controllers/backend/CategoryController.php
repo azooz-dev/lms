@@ -5,9 +5,10 @@ namespace App\Http\Controllers\backend;
 use App\Helpers\FlashNotification;
 use App\Helpers\ImageResizer;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Category\StoreCategoryRequest;
+use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
 use Exception;
-use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
@@ -30,13 +31,8 @@ class CategoryController extends Controller
         return view('admin.backend.category.add_category');
     }
 
-    public function store_category(Request $request)
+    public function store_category(StoreCategoryRequest $request)
     {
-        $request->validate([
-            'category_name' => 'required|string|max:255',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ]);
-
         try {
             $image = $request->file('image');
             $filename = hexdec(uniqid()).'.'.$image->getClientOriginalExtension();
@@ -70,15 +66,11 @@ class CategoryController extends Controller
      *
      * @throws Exception
      */
-    public function update_category(Request $request, string $id)
+    public function update_category(UpdateCategoryRequest $request, string $id)
     {
         // Get the category object
         $category = Category::find($id);
-        // Validate the request
-        $data = $request->validate([
-            'category_name' => 'required|string|max:255',
-            'image' => 'sometimes|nullable',
-        ]);
+        $data = $request->validated();
 
         try {
             // If the image is provided, upload and resize it

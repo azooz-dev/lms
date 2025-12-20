@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\FlashNotification;
 use App\Http\Requests\ChangeEmailRequest;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\User\UpdateUserProfileRequest;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\Post;
@@ -114,110 +116,61 @@ class UserController extends Controller
 
     /**
      * Update user profile
+     *
+     * @param  UpdateUserProfileRequest  $request  The validated request object
      */
-    public function update_profile(Request $request, string $id): RedirectResponse
+    public function update_profile(UpdateUserProfileRequest $request, string $id): RedirectResponse
     {
         $user = User::find($id);
-        $dataValidated = $request->validate([
-            'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,'.Auth::user()->id,
-            'photo' => 'sometimes|nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string|max:255',
-            'bio' => 'nullable|string',
-        ]);
+        $data = $request->validated();
 
         try {
             if ($request->hasFile('photo')) {
-                // delete existing photo if it exists
+                // Delete existing photo if it exists
                 if (! empty($user->photo) && Storage::exists('public/upload/users_images/'.$user->photo)) {
                     Storage::delete('public/upload/users_images/'.$user->photo);
                 }
-                $dataValidated['photo'] = date('YmdHis').'_'.$request->file('photo')->getClientOriginalName();
-                // store the new photo
-                $request->file('photo')->storeAs('public/upload/users_images', $dataValidated['photo']);
+                $data['photo'] = date('YmdHis').'_'.$request->file('photo')->getClientOriginalName();
+                $request->file('photo')->storeAs('public/upload/users_images', $data['photo']);
             } else {
-                // remove photo attribute if there is no new photo
-                unset($dataValidated['photo']);
+                unset($data['photo']);
             }
 
-            $user->update($dataValidated);
+            $user->update($data);
 
-            $notification = [
-                'message' => 'Profile Updated Successfully',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::success('Profile Updated Successfully.'));
         } catch (Exception $e) {
-            $notification = [
-                'message' => 'Something went wrong! Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Something went wrong! Please try again.'));
         }
     }
 
     public function change_password(ChangePasswordRequest $request, string $id)
     {
-        // if the old password is correct and matching with the current password
         if (! Hash::check($request->old_password, Auth::user()->password)) {
-            $notification = [
-                'message' => 'The old password does not match.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('The old password does not match.'));
         }
 
         try {
-            // if the old password is correct, update the password
             User::whereId($id)->update([
                 'password' => Hash::make($request->new_password),
             ]);
 
-            $notification = [
-                'message' => 'The Password changed successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::success('The Password changed successfully.'));
         } catch (Exception $e) {
-            $notification = [
-                'message' => 'Something went wrong! Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Something went wrong! Please try again.'));
         }
     }
 
     public function change_email(ChangeEmailRequest $request, string $id)
     {
-
         try {
-            // The request validated automatically, so you can proceed with updating the email
             $user = User::find($id);
             $user->email = $request->new_email;
             $user->save();
 
-            // Optionally, send a confirmation email to the new email address
-            // Mail::to($user->new_email)->send(new EmailChangeConfirmation($user));
-
-            $notification = [
-                'message' => 'The Email changed successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::success('The Email changed successfully.'));
         } catch (Exception $e) {
-            $notification = [
-                'message' => 'Something went wrong! Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Something went wrong! Please try again.'));
         }
     }
 }

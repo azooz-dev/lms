@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\backend;
 
+use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Setting\UpdateSiteSettingRequest;
+use App\Http\Requests\Setting\UpdateSmtpRequest;
 use App\Models\SettingSmtp;
 use App\Models\SiteSetting;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Imagick\Driver;
 use Intervention\Image\ImageManager;
@@ -22,36 +24,15 @@ class SettingController extends Controller
     /**
      * Update smtp setting
      *
-     * @param  Illuminate\Http\Request  $request
-     * @return Illuminate\Http\RedirectResponse
-     * @return array
+     * @param  UpdateSmtpRequest  $request  The validated request object
+     * @param  string  $id  The SMTP setting ID
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function smtp_update(Request $request, string $id)
+    public function smtp_update(UpdateSmtpRequest $request, string $id)
     {
+        SettingSmtp::find($id)->update($request->validated());
 
-        // Validate input
-        $date = $request->validate([
-            'mailer' => 'required',
-            'host' => 'required',
-            'port' => 'required',
-            'username' => 'required',
-            'password' => 'required',
-            'encryption' => 'required',
-            'from_address' => 'required',
-        ]);
-
-        // Update smtp setting
-        SettingSmtp::find($id)->update($date);
-
-        // Notify user
-        $notification = [
-            'message' => 'Smtp setting updated successfully.',
-            'alert-type' => 'success',
-        ];
-
-        // Redirect back
-        return redirect()->back()->with($notification);
-
+        return redirect()->back()->with(FlashNotification::success('SMTP setting updated successfully.'));
     }
 
     public function site_setting()
@@ -61,51 +42,33 @@ class SettingController extends Controller
         return view('admin.backend.settings.site_setting', compact('site'));
     }
 
-    public function site_setting_update(Request $request, string $id)
+    /**
+     * Update site setting
+     *
+     * @param  UpdateSiteSettingRequest  $request  The validated request object
+     * @param  string  $id  The site setting ID
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function site_setting_update(UpdateSiteSettingRequest $request, string $id)
     {
-
-        // Validate input
-        $data = $request->validate([
-            'logo' => 'nullable|sometimes|image',
-            'email_site' => 'required',
-            'phone_site' => 'required',
-            'address_site' => 'required',
-            'facebook' => 'required',
-            'twitter' => 'required',
-            'instagram' => 'required',
-            'linkedin' => 'required',
-            'copyright' => 'required',
-        ]);
-
+        $data = $request->validated();
         $site = SiteSetting::find($id);
 
         if ($request->hasFile('logo')) {
-            // If the file exists in database and exists in storage folder
+            // Delete old logo if exists
             if (! empty($site->logo) && Storage::exists('public/upload/logo/'.$site->logo)) {
-                // Delete the old image from storage
                 Storage::delete('public/upload/logo/'.$site->logo);
             }
 
             // Upload and resize the new image
-            if ($request->hasFile('logo')) {
-                $manager = new ImageManager(new Driver);
-
-                $data['logo'] = hexdec(uniqid()).'.'.$request->file('logo')->getClientOriginalExtension();
-                $img = $manager->read($request->file('logo'))->resize('140', '41'); // For Process Image
-                $img->save('storage/upload/logo/'.$data['logo'], 100, 'png');
-            }
-
-            $site->update($data);
-
-            // Return a success message
-            $notification = [
-                'message' => 'Site Settings updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->back()->with($notification);
-
+            $manager = new ImageManager(new Driver);
+            $data['logo'] = hexdec(uniqid()).'.'.$request->file('logo')->getClientOriginalExtension();
+            $img = $manager->read($request->file('logo'))->resize(140, 41);
+            $img->save('storage/upload/logo/'.$data['logo'], 100, 'png');
         }
 
+        $site->update($data);
+
+        return redirect()->back()->with(FlashNotification::success('Site settings updated successfully.'));
     }
 }
