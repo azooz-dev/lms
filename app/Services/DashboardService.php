@@ -4,14 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Course;
-use App\Models\Order;
-use App\Models\Review;
-use App\Models\User;
+use App\Repositories\Contracts\CourseRepositoryInterface;
+use App\Repositories\Contracts\OrderRepositoryInterface;
+use App\Repositories\Contracts\ReviewRepositoryInterface;
+use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Support\Collection;
 
 class DashboardService
 {
+    public function __construct(
+        private readonly OrderRepositoryInterface $orderRepository,
+        private readonly UserRepositoryInterface $userRepository,
+        private readonly CourseRepositoryInterface $courseRepository,
+        private readonly ReviewRepositoryInterface $reviewRepository
+    ) {}
+
     /**
      * Get all dashboard statistics
      */
@@ -49,13 +56,7 @@ class DashboardService
     {
         $year = $year ?? (int) date('Y');
 
-        return Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->whereYear('orders.created_at', $year)
-            ->selectRaw('MONTH(orders.created_at) as month, SUM(orders.course_price) as total_sales, COUNT(*) as order_count')
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+        return $this->orderRepository->getMonthlySales($year);
     }
 
     /**
@@ -63,14 +64,7 @@ class DashboardService
      */
     public function getDailySales(): Collection
     {
-        return Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->whereMonth('orders.created_at', date('m'))
-            ->whereYear('orders.created_at', date('Y'))
-            ->selectRaw('DATE(orders.created_at) as date, SUM(orders.course_price) as total_sales, COUNT(*) as order_count')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
+        return $this->orderRepository->getDailySales();
     }
 
     /**
@@ -78,10 +72,7 @@ class DashboardService
      */
     public function getRecentOrders(int $limit = 6): Collection
     {
-        return Order::with(['course', 'user', 'payment'])
-            ->orderBy('created_at', 'desc')
-            ->limit($limit)
-            ->get();
+        return $this->orderRepository->getRecentOrders($limit);
     }
 
     /**
@@ -100,7 +91,7 @@ class DashboardService
      */
     private function getTotalOrders(): int
     {
-        return Order::count();
+        return $this->orderRepository->count();
     }
 
     /**
@@ -108,9 +99,7 @@ class DashboardService
      */
     private function getTotalRevenue(): float
     {
-        return (float) Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->sum('orders.course_price');
+        return $this->orderRepository->getTotalRevenue();
     }
 
     /**
@@ -118,7 +107,7 @@ class DashboardService
      */
     private function getTotalCustomers(): int
     {
-        return User::where('role', 'user')->count();
+        return $this->userRepository->countByRole('user');
     }
 
     /**
@@ -126,7 +115,7 @@ class DashboardService
      */
     private function getTotalCourses(): int
     {
-        return Course::count();
+        return $this->courseRepository->count();
     }
 
     /**
@@ -134,7 +123,7 @@ class DashboardService
      */
     private function getTotalInstructors(): int
     {
-        return User::where('role', 'instructor')->count();
+        return $this->userRepository->countByRole('instructor');
     }
 
     /**
@@ -142,9 +131,7 @@ class DashboardService
      */
     private function getPendingOrders(): int
     {
-        return Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'pending')
-            ->count();
+        return $this->orderRepository->getPendingOrdersCount();
     }
 
     /**
@@ -152,9 +139,7 @@ class DashboardService
      */
     private function getCompletedOrders(): int
     {
-        return Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->count();
+        return $this->orderRepository->getCompletedOrdersCount();
     }
 
     /**
@@ -162,7 +147,7 @@ class DashboardService
      */
     private function getTotalReviews(): int
     {
-        return Review::count();
+        return $this->reviewRepository->count();
     }
 
     /**
@@ -170,7 +155,7 @@ class DashboardService
      */
     private function getPendingReviews(): int
     {
-        return Review::where('status', '0')->count();
+        return $this->reviewRepository->getPendingCount();
     }
 
     /**
@@ -178,8 +163,8 @@ class DashboardService
      */
     private function calculateOrderChange(): float
     {
-        $lastWeekOrders = Order::whereBetween('created_at', [now()->subWeek(), now()])->count();
-        $previousWeekOrders = Order::whereBetween('created_at', [now()->subWeeks(2), now()->subWeek()])->count();
+        $lastWeekOrders = $this->orderRepository->getOrdersCountInDateRange(now()->subWeek(), now());
+        $previousWeekOrders = $this->orderRepository->getOrdersCountInDateRange(now()->subWeeks(2), now()->subWeek());
 
         return $previousWeekOrders > 0
             ? (($lastWeekOrders - $previousWeekOrders) / $previousWeekOrders) * 100
@@ -191,15 +176,8 @@ class DashboardService
      */
     private function calculateRevenueChange(): float
     {
-        $lastWeekRevenue = Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->whereBetween('orders.created_at', [now()->subWeek(), now()])
-            ->sum('orders.course_price');
-
-        $previousWeekRevenue = Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->whereBetween('orders.created_at', [now()->subWeeks(2), now()->subWeek()])
-            ->sum('orders.course_price');
+        $lastWeekRevenue = $this->orderRepository->getRevenueInDateRange(now()->subWeek(), now());
+        $previousWeekRevenue = $this->orderRepository->getRevenueInDateRange(now()->subWeeks(2), now()->subWeek());
 
         return $previousWeekRevenue > 0
             ? (($lastWeekRevenue - $previousWeekRevenue) / $previousWeekRevenue) * 100
@@ -211,13 +189,8 @@ class DashboardService
      */
     private function calculateCustomerChange(): float
     {
-        $lastWeekCustomers = User::where('role', 'user')
-            ->whereBetween('created_at', [now()->subWeek(), now()])
-            ->count();
-
-        $previousWeekCustomers = User::where('role', 'user')
-            ->whereBetween('created_at', [now()->subWeeks(2), now()->subWeek()])
-            ->count();
+        $lastWeekCustomers = $this->userRepository->countByRoleInDateRange('user', now()->subWeek(), now());
+        $previousWeekCustomers = $this->userRepository->countByRoleInDateRange('user', now()->subWeeks(2), now()->subWeek());
 
         return $previousWeekCustomers > 0
             ? (($lastWeekCustomers - $previousWeekCustomers) / $previousWeekCustomers) * 100

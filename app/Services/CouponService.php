@@ -5,19 +5,21 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Coupon;
-use Carbon\Carbon;
+use App\Repositories\Contracts\CouponRepositoryInterface;
 use Gloudemans\Shoppingcart\Facades\Cart;
 
 class CouponService
 {
+    public function __construct(
+        private readonly CouponRepositoryInterface $couponRepository
+    ) {}
+
     /**
      * Validate and retrieve a coupon by name
      */
     public function validateCoupon(string $couponName): ?Coupon
     {
-        return Coupon::where('coupon_name', $couponName)
-            ->where('coupon_validity', '>=', Carbon::now())
-            ->first();
+        return $this->couponRepository->findValidByName($couponName);
     }
 
     /**
@@ -25,7 +27,7 @@ class CouponService
      */
     public function isCouponValidForCourse(Coupon $coupon, int $courseId): bool
     {
-        return (int) $coupon->course_id === $courseId;
+        return $this->couponRepository->isCouponValidForCourse($coupon, $courseId);
     }
 
     /**
