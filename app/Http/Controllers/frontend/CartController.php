@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\OrderComplate;
 use App\Services\CartService;
+use App\Services\CouponService;
 use Carbon\Carbon;
 use Gloudemans\Shoppingcart\Facades\Cart;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +28,8 @@ use Stripe\Token;
 class CartController extends Controller
 {
     public function __construct(
-        private readonly CartService $cartService
+        private readonly CartService $cartService,
+        private readonly CouponService $couponService
     ) {}
 
     /**
@@ -89,119 +91,56 @@ class CartController extends Controller
      * Apply a coupon to the cart.
      *
      * @param  ApplyCouponRequest  $request  The validated request object containing the coupon name.
-     * @return \Illuminate\Http\JsonResponse The JSON response with the result of the application.
      */
-    public function apply_coupon(ApplyCouponRequest $request)
+    public function apply_coupon(ApplyCouponRequest $request): JsonResponse
     {
-        // Clear existing coupon-related session data
-        session()->forget('coupon');
+        // Clear existing coupon
+        $this->couponService->removeCouponFromSession();
 
-        // Get the coupon
-        /** @var \App\Models\Coupon $coupon */
-        $coupon = Coupon::where('coupon_name', $request->coupon_name)
-            // Check if the coupon is valid
-            ->where('coupon_validity', '>=', Carbon::now())
-            ->first();
-
-        $id = $request->query('id');
-        $instructor = $request->query('instructor');
-        // return response()->json([
-        //     'coupon' => gettype($coupon->course_id) ,
-        //     'id' => gettype($id),
-        //     'test1' => intval($id),
-        //     'test2' => intval($coupon->course_id),
-        //     'check' => intval($coupon->course_id) == intval($id),
-        // ]);
-        // If the coupon is not found, return a response
+        // Validate the coupon
+        $coupon = $this->couponService->validateCoupon($request->coupon_name);
         if (! $coupon) {
-            // Return an error response if the coupon is not found
-            return response()->json(['error' => 'coupon not found.'], 404);
-        } elseif (intval($coupon->course_id) == intval($id)) {
+            return response()->json(['error' => 'Coupon not found.'], 404);
+        }
 
-            // Check if the coupon is valid for the course and instructor
+        $courseId = (int) $request->query('id');
+        $instructor = $request->query('instructor');
 
-            // Check if the cart is empty
-            if (Cart::content()->isEmpty()) {
-                // Return an error response if the cart is empty
-                return response()->json(['error' => 'You must add the course to the cart before applying the coupon.']);
-            }
-            // If the coupon is valid, calculate the discount amount and total amount
-            foreach (Cart::content() as $course) {
-                if ($course->id == $id && $course->options->instructor == $instructor) {
-                    break;
-                }
-            }
-            if (empty($course)) {
-                // Return an error response if the cart does not contain the course
-                return response()->json(['error' => 'You must add the course to the cart before applying the coupon.']);
-            }
-
-            // Calculate the discount amount and total amount
-            $discountAmount = round(Cart::total() * $coupon->coupon_discount / 100);
-            $totalAmount = ($course->discount_price > 0 ? round($course->discount_price - $discountAmount) : round($course->selling_price - $discountAmount));
-            $removePrice = ($course->discount_price > 0 ? Cart::total() - $course->discount_price : Cart::total() - $course->selling_price);
-            $totalAmount = $totalAmount + $removePrice;
-
-            // Store the coupon details in the session
-            session()->put('coupon', [
-                'coupon_name' => $coupon->coupon_name,
-                'coupon_discount' => $coupon->coupon_discount,
-                'discount_amount' => $discountAmount,
-                'total_amount' => $totalAmount,
-            ]);
-
-            // Return a success response
-            return response()->json([
-                'validity' => true,
-                'message' => 'Coupon applied successfully.',
-                'cartContent' => Cart::content()->isEmpty(),
-            ], 200);
-        } else {
-            // Return an error response if the coupon is not suitable for the course
+        // Check if coupon is valid for the specific course
+        if (! $this->couponService->isCouponValidForCourse($coupon, $courseId)) {
             return response()->json(['error' => 'This coupon is not suitable for this course.']);
         }
-        // Calculate the discount amount and total amount
-        $discountAmount = round(Cart::total() * $coupon->coupon_discount / 100);
-        $totalAmount = round(Cart::total() - $discountAmount);
 
-        // Store the coupon details in the session
-        session()->put('coupon', [
-            'coupon_name' => $coupon->coupon_name,
-            'coupon_discount' => $coupon->coupon_discount,
-            'discount_amount' => $discountAmount,
-            'total_amount' => $totalAmount,
-        ]);
+        // Check if cart is empty
+        if ($this->cartService->isEmpty()) {
+            return response()->json(['error' => 'You must add the course to the cart before applying the coupon.']);
+        }
 
-        // Return a success response
+        // Find the course in cart
+        $cartItem = $this->cartService->findCourseInCart($courseId, $instructor);
+        if (! $cartItem) {
+            return response()->json(['error' => 'You must add the course to the cart before applying the coupon.']);
+        }
+
+        // Calculate and apply discount
+        $couponData = $this->couponService->calculateCourseSpecificDiscount($coupon, $cartItem);
+        $this->couponService->applyCouponToSession($couponData);
+
         return response()->json([
             'validity' => true,
             'message' => 'Coupon applied successfully.',
+            'cartContent' => $this->cartService->isEmpty(),
         ], 200);
     }
 
-    public function cart_calculation()
+    public function cart_calculation(): JsonResponse
     {
-        // Check if a coupon is applied
-        if (session()->has('coupon')) {
-            // If a coupon is applied, return the calculation results
-            return response()->json([
-                'subTotal' => Cart::total(),  // Total before discount
-                'coupon_name' => session()->get('coupon')['coupon_name'],  // Name of the applied coupon
-                'coupon_discount' => session()->get('coupon')['coupon_discount'],  // Discount percentage
-                'discount_amount' => session()->get('coupon')['discount_amount'],  // Discount amount
-                'total_amount' => Cart::total() - session()->get('coupon')['discount_amount'],  // Total after discount
-            ]);
-        } else {
-            // If no coupon is applied, return the total cart amount
-            return response()->json([
-                'total' => Cart::total(),  // Total cart amount
-            ]);
-        }
+        return response()->json($this->couponService->getCartCalculation());
     }
 
-    public function remove_coupon()
+    public function remove_coupon(): JsonResponse
     {
-        session()->forget('coupon');
+        $this->couponService->removeCouponFromSession();
 
         return response()->json(['success' => 'Coupon removed successfully.']);
     }
