@@ -56,7 +56,7 @@
                             <td class="text-center">
                                 <div class="d-flex justify-content-center">
                                     <a href="{{ route('admin.edit_admin', $admin->id) }}" class="btn btn-info" style="margin-right: 10px; width: 100px">Edit</a>
-                                    <form action="{{ route('admin.admin_destory', $admin->id) }}" method="POST">
+                                    <form action="{{ route('admin.admin_destroy', $admin->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" id="delete" class="btn btn-danger" style="width: 100px">Delete</button>

@@ -82,7 +82,7 @@ class SubCategoryController extends Controller
     }
 
 
-    public function destory_subCategory(string $id) {
+    public function destroy_subCategory(string $id) {
 
         try {
             SubCategory::find($id)->delete();

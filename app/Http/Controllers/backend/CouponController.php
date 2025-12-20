@@ -79,7 +79,7 @@ class CouponController extends Controller
     }
 
 
-    public function destory_coupon(string $id) {
+    public function destroy_coupon(string $id) {
         Coupon::find($id)->delete();
 
         $notifications = [

@@ -44,7 +44,7 @@
                             <td class="text-center">
                                 <div class="d-flex justify-content-center">
                                     <a href="{{ route('admin.edit_subCategory', $subCategory->id) }}" class="btn btn-info" style="margin-right: 10px; width: 100px">Edit</a>
-                                    <form action="{{ route('admin.subCategory_destory', $subCategory->id) }}" method="POST">
+                                    <form action="{{ route('admin.subCategory_destroy', $subCategory->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" id="delete" class="btn btn-danger" style="width: 100px">Delete</button>

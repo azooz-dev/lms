@@ -49,7 +49,7 @@
                             <td class="text-center">
                                 <div class="d-flex justify-content-center">
                                     <a href="{{ route('instructor.edit_course', $course->id) }}" class="btn btn-info" title="Edit" style="margin-right: 5px; "><i class="lni lni-eraser"></i></a>
-                                    <form action="{{ route('instructor.course_destory', $course->id) }}" method="POST">
+                                    <form action="{{ route('instructor.course_destroy', $course->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" id="delete" class="btn btn-danger" title="Delete"><i class="lni lni-trash"></i></button>

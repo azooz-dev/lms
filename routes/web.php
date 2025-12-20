@@ -89,7 +89,7 @@ Route::controller(AdminController::class)->group(function () {
         Route::post('/admin/store', 'store_admin')->name('admin.admin_store');
         Route::get('/admin/edit/{id}', 'edit_admin')->name('admin.edit_admin');
         Route::put('/admin/update/{id}', 'update_admin')->name('admin.update_admin');
-        Route::delete('/admin/delete/{id}', 'delete_admin')->name('admin.admin_destory');
+        Route::delete('/admin/delete/{id}', 'delete_admin')->name('admin.admin_destroy');
 
         // Theme Routes
         Route::post('/update-theme', 'update_theme')->name('update-theme');
@@ -104,7 +104,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::post('/category/store', 'store_category')->name('admin.category_store');
             Route::get('/category/{id}/edit', 'edit_category')->name('admin.edit_category')->middleware('permission:category.edit');
             Route::put('/category/update/{update}', 'update_category')->name('admin.update_category');
-            Route::delete('/category/delete/{delete}', 'destory_category')->name('admin.category_destory')->middleware('permission:category.delete');
+            Route::delete('/category/delete/{delete}', 'destroy_category')->name('admin.category_destroy')->middleware('permission:category.delete');
         });
 
         // All SubCategories Routes 
@@ -115,7 +115,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::post('/subCategory/store', 'store_subCategory')->name('admin.subCategory_store');
             Route::get('/subCategory/{id}/edit', 'edit_subCategory')->name('admin.edit_subCategory');
             Route::put('/subCategory/update/{update}', 'update_subCategory')->name('admin.update_subCategory');
-            Route::delete('/subCategory/delete/{delete}', 'destory_subCategory')->name('admin.subCategory_destory');
+            Route::delete('/subCategory/delete/{delete}', 'destroy_subCategory')->name('admin.subCategory_destroy');
         });
 
 
@@ -127,7 +127,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::post('/coupon/store', 'store_coupon')->name('admin.coupon_store');
             Route::get('/coupon/{id}/edit', 'edit_coupon')->name('admin.edit_coupon')->middleware('permission:coupon.edit');
             Route::put('/coupon/update/{id}', 'update_coupon')->name('admin.update_coupon');
-            Route::delete('/coupon/delete/{id}', 'destory_coupon')->name('admin.coupon_destory')->middleware('permission:coupon.delete');
+            Route::delete('/coupon/delete/{id}', 'destroy_coupon')->name('admin.coupon_destroy')->middleware('permission:coupon.delete');
         });
 
 
@@ -186,7 +186,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::post('/store/blog/category', 'store_blog_category')->name('admin.store_blog_category');
             Route::get('/blog/category/edit/{id}', 'blog_category_edit')->name('admin.blog_category_edit');
             Route::put('/blog/category/update/{id}', 'update_blog_category')->name('admin.update_blog_category');
-            Route::delete('/destroy/blog/category/{id}', 'delete_blog_category')->name('admin.blog_category_destory');
+            Route::delete('/destroy/blog/category/{id}', 'delete_blog_category')->name('admin.blog_category_destroy');
         });
 
 
@@ -197,7 +197,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::post('/post/store/{id}', 'store_post')->name('admin.post_store');
             Route::get('/post/edit/{id}', 'post_edit')->name('admin.edit_post');
             Route::put('/post/update/{id}', 'update_post')->name('admin.update_post');
-            Route::delete('/destory/post/{id}', 'delete_post')->name('admin.post_destory');
+            Route::delete('/destroy/post/{id}', 'delete_post')->name('admin.post_destroy');
         });
 
         // All Role & Permissions Routes
@@ -208,7 +208,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::post('/permission/store', 'store_permission')->name('admin.permission_store');
             Route::get('/permission/edit/{id}', 'permission_edit')->name('admin.edit_permission');
             Route::put('/permission/update/{id}', 'update_permission')->name('admin.update_permission');
-            Route::delete('/destory/permission/{id}', 'permission_delete')->name('admin.permission_destory');
+            Route::delete('/destroy/permission/{id}', 'permission_delete')->name('admin.permission_destroy');
 
             // All Export Import Files 
             Route::get('/export/permission', 'export_permission')->name('admin.export_permission');
@@ -221,7 +221,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::post('/role/store', 'store_role')->name('admin.role_store');
             Route::get('/role/edit/{id}', 'edit_role')->name('admin.edit_role');
             Route::put('/role/update/{id}', 'update_role')->name('admin.update_role');
-            Route::delete('/destory/role/{id}', 'delete_role')->name('admin.role_destory');
+            Route::delete('/destroy/role/{id}', 'delete_role')->name('admin.role_destroy');
 
             // All Role In Permissions
             Route::get('all/role/permissions', 'all_role_permissions')->name('admin.all_role_permissions');
@@ -229,7 +229,7 @@ Route::controller(AdminController::class)->group(function () {
             Route::post('/role/permissions/store', 'store_role_permissions')->name('admin.role_permission_store');
             Route::get('/edit/role/permissions/{id}', 'edit_role_permissions')->name('admin.edit_role_permissions');
             Route::put('/update/role/permissions/{id}', 'update_role_permissions')->name('admin.update_role_permissions');
-            Route::delete('/destory/role/permissions/{id}', 'delete_role_permissions')->name('admin.role_permissions_destory');
+            Route::delete('/destroy/role/permissions/{id}', 'delete_role_permissions')->name('admin.role_permissions_destroy');
         })->middleware('permission:rolepermission.menu');
     });
 
@@ -265,19 +265,19 @@ Route::controller(InstructorController::class)->prefix('instructor')->group(func
             Route::put('/course/update/{update}', 'update_course')->name('instructor.update_course');
             Route::put('/course/video/{update}', 'update_video')->name('instructor.update_video');
             Route::put('/course/goals/{update}', 'update_goals')->name('instructor.update_goals');
-            Route::delete('/course/delete/{delete}', 'destory_course')->name('instructor.course_destory');
+            Route::delete('/course/delete/{delete}', 'destroy_course')->name('instructor.course_destroy');
         });
 
         // All Sections Course Routes And Lectures Course Routes
         Route::controller(CourseController::class)->group(function () {
             Route::get('/section/create/{id}', 'create_section')->name('instructor.create_section');
             Route::post('/section/store/{id}', 'store_section')->name('instructor.section_store');
-            Route::delete('/section/delete/{delete}', 'destory_section')->name('instructor.section_destory');
+            Route::delete('/section/delete/{delete}', 'destroy_section')->name('instructor.section_destroy');
 
             Route::post('/lecture/store/{id}', 'store_lecture')->name('instructor.lecture_store');
             Route::get('/lecture/{id}/edit', 'edit_lecture')->name('instructor.edit_lecture');
             Route::put('/lecture/update/{update}', 'update_lecture')->name('instructor.update_lecture');
-            Route::delete('/lecture/delete/{delete}', 'destory_lecture')->name('instructor.lecture_destory');
+            Route::delete('/lecture/delete/{delete}', 'destroy_lecture')->name('instructor.lecture_destroy');
         });
 
         // All Orders Routes
@@ -303,7 +303,7 @@ Route::controller(InstructorController::class)->prefix('instructor')->group(func
             Route::post('/coupon/store/{id}', 'store_instructor_coupon')->name('instructor.coupon_store');
             Route::get('/edit/coupon/{id}', 'edit_instructor_coupon')->name('instructor.edit_coupon');
             Route::put('/update/coupon/{id}', 'update_instructor_coupon')->name('instructor.update_coupon');
-            Route::delete('/destory/coupon/{id}', 'delete_instructor_coupon')->name('instructor.destory_coupon');
+            Route::delete('/destroy/coupon/{id}', 'delete_instructor_coupon')->name('instructor.destroy_coupon');
         });
 
 
@@ -334,7 +334,7 @@ Route::controller(WishListController::class)->group(function () {
     Route::post('/wishlist/store', 'store_wishList')->name('wishlist.store');
     Route::get('/wishlist/all', 'wishList_view')->name('user.wishlist');
     Route::get('/all/wishlist/{id}', 'all_wishList')->name('wishlist.all');
-    Route::delete('/remove/wishlist/{id}/{course}', 'delete_wishlist')->name('destory_wishlist');
+    Route::delete('/remove/wishlist/{id}/{course}', 'delete_wishlist')->name('destroy_wishlist');
 });
 
 

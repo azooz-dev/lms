@@ -129,7 +129,7 @@ class CategoryController extends Controller
     }
 
 
-    public function destory_category(string $id)
+    public function destroy_category(string $id)
     {
         $category = Category::find($id);
 

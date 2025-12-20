@@ -324,7 +324,7 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function destory_course(string $id)
+    public function destroy_course(string $id)
     {
         $course = Course::find($id);
         try {
@@ -396,7 +396,7 @@ class CourseController extends Controller
 
 
 
-    public function destory_section(string $id)
+    public function destroy_section(string $id)
     {
         $section = Course_Section::find($id);
         try {
@@ -505,7 +505,7 @@ class CourseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function destory_lecture(string $id)
+    public function destroy_lecture(string $id)
     {
         $lecture = Course_Lecture::find($id);  // Find the lecture with the given ID
         $lecture->delete();  // Delete the lecture

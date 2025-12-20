@@ -48,7 +48,7 @@
                             <td class="text-center">
                                 <div class="d-flex justify-content-center">
                                     <a href="{{ route('admin.edit_role_permissions', $role->id) }}" class="btn btn-info" style="margin-right: 10px; width: 100px">Edit</a>
-                                    <form action="{{ route('admin.role_permissions_destory', $role->id) }}" method="POST">
+                                    <form action="{{ route('admin.role_permissions_destroy', $role->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" id="delete" class="btn btn-danger" style="width: 100px">Delete</button>
