@@ -3,7 +3,13 @@
 namespace App\Http\Controllers\backend;
 
 use App\Exports\PermissionExport;
+use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Role\ImportPermissionRequest;
+use App\Http\Requests\Role\StorePermissionRequest;
+use App\Http\Requests\Role\StoreRoleRequest;
+use App\Http\Requests\Role\UpdatePermissionRequest;
+use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Imports\PermissionImport;
 use App\Models\User;
 use Exception;
@@ -30,43 +36,24 @@ class RoleController extends Controller
     /**
      * Store a new permission in the database.
      *
-     * @param  Request  $request  The HTTP request object.
+     * @param  StorePermissionRequest  $request  The validated request object.
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store_permission(Request $request)
+    public function store_permission(StorePermissionRequest $request)
     {
-
         try {
-            // Validate the request data
-            $request->validate([
-                'name' => 'required|unique:permissions',
-                'group_name' => 'required',
-            ]);
-
-            // Create a new permission record
             Permission::create([
                 'name' => $request->name,
                 'group_name' => $request->group_name,
             ]);
 
-            // Create a success notification
-            $notification = [
-                'message' => 'Permission created successfully.',
-                'alert-type' => 'success',
-            ];
-
-            // Redirect to the all permissions page with the notification
-            return redirect()->route('admin.all_permission')->with($notification);
+            return redirect()
+                ->route('admin.all_permission')
+                ->with(FlashNotification::success('Permission created successfully.'));
         } catch (Exception $e) {
-
-            // Create an error notification
-            $notification = [
-                'message' => 'Oops, something went wrong. Please try again',
-                'alert-type' => 'error',
-            ];
-
-            // Redirect back to the previous page with the notification
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
@@ -80,71 +67,39 @@ class RoleController extends Controller
     /**
      * Update a permission in the database.
      *
-     * @param  Request  $request  The HTTP request object.
+     * @param  UpdatePermissionRequest  $request  The validated request object.
      * @param  string  $id  The ID of the permission to update.
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update_permission(Request $request, string $id)
+    public function update_permission(UpdatePermissionRequest $request, string $id)
     {
-
         try {
-            // Find the permission by ID
             $permission = Permission::find($id);
+            $permission->update($request->validated());
 
-            // Validate the request data
-            $data = $request->validate([
-                'name' => 'required|unique:permissions,name,'.$permission->id, // Ensure the name is unique except for itself
-                'group_name' => 'required',
-            ]);
-
-            // Update the permission with the new data
-            $permission->update($data);
-
-            // Create a success notification
-            $notification = [
-                'message' => 'Permission updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            // Redirect to the all permissions page with the notification
-            return redirect()->route('admin.all_permission')->with($notification);
+            return redirect()
+                ->route('admin.all_permission')
+                ->with(FlashNotification::success('Permission updated successfully.'));
         } catch (Exception $e) {
-
-            // Create an error notification
-            $notification = [
-                'message' => 'Oops! something went wrong.',
-                'alert-type' => 'error',
-            ];
-
-            // Redirect back to the previous page with the notification
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
     public function permission_delete(string $id)
     {
-
         try {
             Permission::find($id)->delete();
-            $notification = [
-                'message' => 'Permission deleted successfully.',
-                'alert-type' => 'success',
-            ];
 
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::success('Permission deleted successfully.'));
         } catch (Exception $e) {
-            $notification = [
-                'message' => 'Oops! something went wrong.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
     public function export_permission()
     {
-
         return Excel::download(new PermissionExport, 'permissions.xlsx');
     }
 
@@ -153,34 +108,19 @@ class RoleController extends Controller
         return view('admin.backend.pages.permissions.import_permission');
     }
 
-    public function import_permission_file(Request $request)
+    public function import_permission_file(ImportPermissionRequest $request)
     {
+        try {
+            Excel::import(new PermissionImport, $request->file('excel_file'));
 
-        $request->validate([
-            'excel_file' => 'required|mimes:xlsx',
-        ]);
-
-        $import = Excel::import(new PermissionImport, $request->file('excel_file'));
-        if ($import) {
-            $notification = [
-                'message' => 'Permission imported successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->back()->with($notification);
-        } else {
-            $notification = [
-                'message' => 'Oops! something went wrong.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::success('Permission imported successfully.'));
+        } catch (Exception $e) {
+            return redirect()->back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
     public function all_roles()
     {
-
         $roles = Role::latest()->get();
 
         return view('admin.backend.pages.roles.all_roles', compact('roles'));
@@ -188,55 +128,34 @@ class RoleController extends Controller
 
     public function add_role()
     {
-
         return view('admin.backend.pages.roles.add_role');
     }
 
     /**
      * Store a new role in the database.
      *
-     * @param  Request  $request  The HTTP request object.
+     * @param  StoreRoleRequest  $request  The validated request object.
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store_role(Request $request)
+    public function store_role(StoreRoleRequest $request)
     {
-
         try {
-
-            // Validate the request data
-            $request->validate([
-                'name' => 'required|unique:roles', // Ensure the name is unique
-            ]);
-
-            // Create a new role
             Role::create([
                 'name' => $request->name,
             ]);
 
-            // Create a success notification
-            $notification = [
-                'message' => 'Role created successfully.',
-                'alert-type' => 'success',
-            ];
-
-            // Redirect to the all roles page with the notification
-            return redirect()->route('admin.all_role')->with($notification);
+            return redirect()
+                ->route('admin.all_role')
+                ->with(FlashNotification::success('Role created successfully.'));
         } catch (Exception $e) {
-
-            // Create an error notification
-            $notification = [
-                'message' => 'Oops, something went wrong. Please try again',
-                'alert-type' => 'error',
-            ];
-
-            // Redirect back to the previous page with the notification
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
     public function edit_role(string $id)
     {
-
         $role = Role::find($id);
 
         return view('admin.backend.pages.roles.edit_role', compact('role'));
@@ -245,72 +164,39 @@ class RoleController extends Controller
     /**
      * Update a role in the database.
      *
-     * @param  Request  $request  The HTTP request object.
+     * @param  UpdateRoleRequest  $request  The validated request object.
      * @param  string  $id  The ID of the role to update.
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update_role(Request $request, string $id)
+    public function update_role(UpdateRoleRequest $request, string $id)
     {
-
         try {
-            // Find the role by ID
             $role = Role::find($id);
+            $role->update($request->validated());
 
-            // Validate the request data
-            $data = $request->validate([
-                'name' => 'required|unique:roles,name,'.$role->id, // Ensure the name is unique except for itself
-            ]);
-
-            // Update the role with the new data
-            $role->update($data);
-
-            // Create a success notification
-            $notification = [
-                'message' => 'Role updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            // Redirect to the all roles page with the notification
-            return redirect()->route('admin.all_role')->with($notification);
+            return redirect()
+                ->route('admin.all_role')
+                ->with(FlashNotification::success('Role updated successfully.'));
         } catch (Exception $e) {
-
-            // Create an error notification
-            $notification = [
-                'message' => 'Oops, something went wrong. Please try again',
-                'alert-type' => 'error',
-            ];
-
-            // Redirect back to the previous page with the notification
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
     public function delete_role(string $id)
     {
-
         try {
             Role::find($id)->delete();
 
-            $notification = [
-                'message' => 'Role deleted successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::success('Role deleted successfully.'));
         } catch (Exception $e) {
-
-            $notification = [
-                'message' => 'Oops, something went wrong. Please try again',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
     public function all_role_permissions()
     {
-
         $roles = Role::all();
 
         return view('admin.backend.pages.roleSetup.all_role_permission', compact('roles'));
@@ -318,11 +204,8 @@ class RoleController extends Controller
 
     public function add_role_permissions()
     {
-
         $roles = Role::all();
-
         $permissionGroups = User::get_permission_group_name();
-
         $permissions = Permission::all();
 
         return view('admin.backend.pages.roleSetup.add_role_permissions', compact('roles', 'permissionGroups', 'permissions'));
@@ -330,7 +213,6 @@ class RoleController extends Controller
 
     public function store_role_permissions(Request $request)
     {
-
         foreach ($request->permission as $permission) {
             DB::table('role_has_permissions')->insert([
                 'role_id' => $request->role_id,
@@ -338,21 +220,15 @@ class RoleController extends Controller
             ]);
         }
 
-        $notification = [
-            'message' => 'Role permissions added successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return redirect()->route('admin.all_role_permissions')->with($notification);
+        return redirect()
+            ->route('admin.all_role_permissions')
+            ->with(FlashNotification::success('Role permissions added successfully.'));
     }
 
     public function edit_role_permissions(string $id)
     {
-
         $role = Role::find($id);
-
         $permissionGroups = User::get_permission_group_name();
-
         $permissions = Permission::all();
 
         return view('admin.backend.pages.roleSetup.edit_role_permissions', compact('role', 'permissionGroups', 'permissions'));
@@ -360,42 +236,28 @@ class RoleController extends Controller
 
     public function update_role_permissions(Request $request, string $id)
     {
-
         $role = Role::find($id);
 
         if (! empty($request->permission)) {
             $role->syncPermissions($request->permission);
 
-            $notification = [
-                'message' => 'Role permissions updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('admin.all_role_permissions')->with($notification);
+            return redirect()
+                ->route('admin.all_role_permissions')
+                ->with(FlashNotification::success('Role permissions updated successfully.'));
         }
+
+        return redirect()->back()->with(FlashNotification::error('Please select at least one permission.'));
     }
 
     public function delete_role_permissions(string $id)
     {
         try {
-
             $role = Role::find($id);
             $role->revokePermissionTo($role->permissions);
 
-            $notification = [
-                'message' => 'Role permissions deleted successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::success('Role permissions deleted successfully.'));
         } catch (Exception $e) {
-
-            $notification = [
-                'message' => 'Oops, something went wrong. Please try again',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 }
