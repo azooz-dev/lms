@@ -13,8 +13,10 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\OrderComplate;
+use App\Services\CartService;
 use Carbon\Carbon;
 use Gloudemans\Shoppingcart\Facades\Cart;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -24,104 +26,45 @@ use Stripe\Token;
 
 class CartController extends Controller
 {
+    public function __construct(
+        private readonly CartService $cartService
+    ) {}
+
     /**
      * Add a course to the cart
      *
      * @param  string  $id  The course id
-     * @return \Illuminate\Http\JsonResponse
-     *
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @return JsonResponse
      */
-    public function store_cart(string $id)
+    public function store_cart(string $id): JsonResponse
     {
-        // Find the course
         $course = Course::find($id);
+        $result = $this->cartService->addCourse($course);
 
-        // Check if the course exists in the cart
-        $cartContent = Cart::content();
-        $itemExists = $cartContent->contains(function ($value, $key) use ($id) {
-            return $value->id == $id;
-        });
-
-        // If the course is already in the cart, return a response
-        if ($itemExists) {
-            return response()->json(['error' => 'The course is already in your cart.']);
+        if ($result['success']) {
+            return response()->json(['success' => $result['message']], 200);
         }
 
-        // If the course is not in the cart, add it
-        if ($course->discount_price > 0) {
-            // Add the course to the cart with discount
-            Cart::add([
-                'id' => $course->id,
-                'name' => $course->name,
-                'qty' => 1,
-                'price' => $course->discount_price,
-                'weight' => 1,
-                'options' => [
-                    'slug' => $course->slug,
-                    'image' => Storage::url("public/upload/course/images/{$course->image}"),
-                    'instructor_id' => $course->instructor->id,
-                    'instructor_name' => $course->instructor->name,
-                    'selling_price' => $course->selling_price,
-                ],
-            ]);
-        } else {
-            // Add the course to the cart without discount
-            Cart::add([
-                'id' => $course->id,
-                'name' => $course->name,
-                'qty' => 1,
-                'price' => $course->selling_price,
-                'weight' => 1,
-                'options' => [
-                    'slug' => $course->slug,
-                    'instructor_id' => $course->instructor->id,
-                    'image' => Storage::url("public/upload/course/images/{$course->image}"),
-                    'instructor' => $course->instructor->name,
-                ],
-            ]);
-        }
-
-        // Return a success response
-        return response()->json(['success' => 'The course has been added to your cart.'], 200);
+        return response()->json(['error' => $result['message']]);
     }
 
     /**
      * Returns a JSON response with the mini cart content, total and count
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function mini_cart()
+    public function mini_cart(): JsonResponse
     {
-        // Get the cart content
-        $cartContent = Cart::content();
-
-        // Get the cart total
-        $cartTotal = Cart::total();
-
-        // Get the cart count
-        $cartCount = Cart::count();
-
-        // Return a JSON response with the data
-        return response()->json([
-            'cartContent' => $cartContent,
-            'cartTotal' => $cartTotal,
-            'cartCount' => $cartCount,
-        ], 200);
+        return response()->json($this->cartService->getCartData(), 200);
     }
 
     /**
      * Remove a course from the mini cart
      *
-     * @param  string  $id  The course id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  string  $id  The row id
      */
-    public function mini_cart_delete(string $id)
+    public function mini_cart_delete(string $id): JsonResponse
     {
-        // Remove the course from the cart
-        Cart::remove($id);
+        $this->cartService->removeCourse($id);
 
-        // Return a success response
         return response()->json(['success' => 'The course has been removed from your cart.'], 200);
     }
 
@@ -130,36 +73,15 @@ class CartController extends Controller
         return view('frontend.cart.my_cart');
     }
 
-    public function cart_content()
+    public function cart_content(): JsonResponse
     {
-        // Get the cart content
-        $cartContent = Cart::content();
-
-        // Get the cart total
-        $cartTotal = Cart::total();
-
-        // Get the cart count
-        $cartCount = Cart::count();
-
-        // Return a JSON response with the data
-        return response()->json([
-            'cartContent' => $cartContent,
-            'cartTotal' => $cartTotal,
-            'cartCount' => $cartCount,
-            'coupon' => session()->has('coupon') ? session('coupon') : null,
-        ], 200);
+        return response()->json($this->cartService->getCartDataWithCoupon(), 200);
     }
 
-    public function remove_course_cart(string $id)
+    public function remove_course_cart(string $id): JsonResponse
     {
-        // Remove the course from the cart
-        Cart::remove($id);
+        $this->cartService->removeCourseAndClearCoupon($id);
 
-        if (session()->has('coupon')) {
-            session()->forget('coupon');
-        }
-
-        // Return a success response
         return response()->json(['success' => 'The course has been removed from your cart.'], 200);
     }
 
@@ -287,27 +209,21 @@ class CartController extends Controller
     /**
      * Show the checkout view
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
     public function checkout()
     {
-        // Check if the user is authenticated
-        if (Auth::check()) {
-            // Check if there are items in the cart
-            if (Cart::total() > 0) {
-                // Get the cart content, total and count
-                $cartContent = Cart::content();
-                $cartTotal = Cart::total();
-                $cartCount = Cart::count();
-
-                // Load the checkout view with the cart data
-                return view('frontend.checkout.checkout_view', compact('cartContent', 'cartTotal', 'cartCount'));
-            } else {
-                return redirect()->to('/')->with(FlashNotification::error('Add at least one course.'));
-            }
-        } else {
+        if (! Auth::check()) {
             return redirect()->to('/login')->with(FlashNotification::error('Please login first.'));
         }
+
+        if ($this->cartService->isEmpty()) {
+            return redirect()->to('/')->with(FlashNotification::error('Add at least one course.'));
+        }
+
+        $cartData = $this->cartService->getCartData();
+
+        return view('frontend.checkout.checkout_view', $cartData);
     }
 
     /**
@@ -443,65 +359,17 @@ class CartController extends Controller
         }
     }
 
-    // The second argument to Stripe API method calls is an optional per-request apiKey, which must be a string, or per-request options, which must be an array. (HINT: you can set a global apiKey by "Stripe::setApiKey(<apiKey>)")
     /**
-     * Add a course to the cart
+     * Add a course to the cart (buy now)
      *
      * @param  string  $id  The course id
-     * @return \Illuminate\Http\JsonResponse The JSON response with the success message
-     *
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    public function buy_course(string $id)
+    public function buy_course(string $id): JsonResponse
     {
-        // Find the course
         $course = Course::find($id);
+        $result = $this->cartService->addCourse($course);
 
-        // Check if the course exists in the cart
-        $cartContent = Cart::content();
-        $itemExists = $cartContent->contains(function ($value, $key) use ($id) {
-            return $value->id == $id;
-        });
-
-        // If the course is already in the cart, return a response
-        if ($itemExists) {
-            return response()->json(['success' => 'The course is already in your cart.'], 200);
-        }
-
-        // If the course is not in the cart, add it
-        if ($course->discount_price > 0) {
-            // Add the course to the cart with discount
-            Cart::add([
-                'id' => $course->id,
-                'name' => $course->name,
-                'qty' => 1,
-                'price' => $course->discount_price,
-                'weight' => 1,
-                'options' => [
-                    'slug' => $course->slug,
-                    'image' => Storage::url("public/upload/course/images/{$course->image}"),
-                    'instructor_id' => $course->instructor->id,
-                    'instructor_name' => $course->instructor->name,
-                    'selling_price' => $course->selling_price,
-                ],
-            ]);
-        } else {
-            // Add the course to the cart without discount
-            Cart::add([
-                'id' => $course->id,
-                'name' => $course->name,
-                'qty' => 1,
-                'price' => $course->selling_price,
-                'weight' => 1,
-                'options' => [
-                    'slug' => $course->slug,
-                    'image' => Storage::url("public/upload/course/images/{$course->image}"),
-                    'instructor' => $course->instructor->name,
-                ],
-            ]);
-        }
-
-        // Return a success response
-        return response()->json(['success' => 'The course has been added to your cart.'], 200);
+        // For buy_course, we always return success even if already in cart
+        return response()->json(['success' => $result['message']], 200);
     }
 }
