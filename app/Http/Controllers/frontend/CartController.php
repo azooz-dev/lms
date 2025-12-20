@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\frontend;
 
+use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cart\ApplyCouponRequest;
+use App\Http\Requests\Cart\ProcessPaymentRequest;
 use App\Mail\OrderConfirm;
 use App\Models\Coupon;
 use App\Models\Course;
@@ -16,8 +19,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use Stripe\Charge;
-use Stripe\Stripe;
 use Stripe\StripeClient;
 use Stripe\Token;
 
@@ -165,19 +166,13 @@ class CartController extends Controller
     /**
      * Apply a coupon to the cart.
      *
-     * @param  Request  $request  The request object containing the coupon name.
+     * @param  ApplyCouponRequest  $request  The validated request object containing the coupon name.
      * @return \Illuminate\Http\JsonResponse The JSON response with the result of the application.
      */
-    public function apply_coupon(Request $request)
+    public function apply_coupon(ApplyCouponRequest $request)
     {
-
         // Clear existing coupon-related session data
         session()->forget('coupon');
-
-        // Validate the request
-        $request->validate([
-            'coupon_name' => 'required',
-        ]);
 
         // Get the coupon
         /** @var \App\Models\Coupon $coupon */
@@ -308,42 +303,25 @@ class CartController extends Controller
                 // Load the checkout view with the cart data
                 return view('frontend.checkout.checkout_view', compact('cartContent', 'cartTotal', 'cartCount'));
             } else {
-                // If the cart is empty, show an error message
-                $notification = [
-                    'message' => 'Add at list one course',
-                    'alert-type' => 'error',
-                ];
-
-                // Redirect to the homepage with the error message
-                return redirect()->to('/')->with($notification);
+                return redirect()->to('/')->with(FlashNotification::error('Add at least one course.'));
             }
         } else {
-            // If the user is not authenticated, show an error message
-            $notification = [
-                'message' => 'Please login first',
-                'alert-type' => 'error',
-            ];
-
-            // Redirect to the login page with the error message
-            return redirect()->to('/login')->with($notification);
+            return redirect()->to('/login')->with(FlashNotification::error('Please login first.'));
         }
     }
 
     /**
      * Process payment for courses in the cart
      *
-     * @param  Request  $request  The request object containing the user's payment details
+     * @param  ProcessPaymentRequest  $request  The validated request object containing the user's payment details
      * @return \Illuminate\Http\Response
      */
-    public function payment_process(Request $request)
+    public function payment_process(ProcessPaymentRequest $request)
     {
-        // dd($request);
         // Check if a coupon is applied
         if (session()->has('coupon')) {
-            // Get the total amount after applying the coupon
             $total_amount = session()->get('coupon')['total_amount'];
         } else {
-            // Get the total amount without applying a coupon
             $total_amount = Cart::total();
         }
 
@@ -355,14 +333,7 @@ class CartController extends Controller
         })->first();
 
         if ($existingOrder) {
-            // No API key provided. (HINT: set your API key using "Stripe::setApiKey(<API-KEY>)". You can generate API keys from the Stripe web interface. See https://stripe.com/api for details, or email support@stripe.com if you have any questions.
-            // If an order with the same courses and user exists, show an error message
-            $notification = [
-                'message' => 'You have already enrolled in this course. Please check your order list.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('You have already enrolled in this course. Please check your order list.'));
         } else {
             // Check the payment method
             if ($request->cash_delivery == 'credit_card') {
@@ -371,30 +342,21 @@ class CartController extends Controller
                     $apiKey = env('STRIPE_SECRET');
                     $stripe = new StripeClient(['api_key' => $apiKey]);
 
-                    // $stripe = Stripe::setApiKey(env('STRIPE_SECRET'));
-                    // Validate and sanitize the input
-                    $validatedData = $request->validate([
-                        'card_number' => '',
-                        'expiry_month' => '',
-                        'expiry_year' => '',
-                        'cardCVV' => '',
-                    ]);
-
                     $token = Token::create([
                         'card' => [
-                            'number' => $validatedData['card_number'],
-                            'exp_month' => $validatedData['expiry_month'],
-                            'exp_year' => $validatedData['expiry_year'],
-                            'cvc' => $validatedData['cardCVV'],
+                            'number' => $request->card_number,
+                            'exp_month' => $request->expiry_month,
+                            'exp_year' => $request->expiry_year,
+                            'cvc' => $request->cardCVV,
                         ],
-                    ]); // Pass the user ID if available
+                    ]);
 
                     // Charge the user's credit card
                     $stripe->charges->create([
                         'amount' => $total_amount * 100, // Stripe requires amount in cents
-                        'currency' => 'usd', // Change to your currency
-                        'source' => $token->id, // obtained with Stripe.js
-                        'description' => 'Example charge',
+                        'currency' => 'usd',
+                        'source' => $token->id,
+                        'description' => 'Course purchase',
                     ]);
 
                     // Create a payment record with the user's details and total amount
@@ -412,7 +374,6 @@ class CartController extends Controller
 
                     // Loop through the courses in the cart and create an order record for each course
                     foreach ($request->course_title as $key => $course_title) {
-                        // Create an order record for the course
                         $course = [
                             'payment_id' => $payment->id,
                             'course_id' => $request->course_id[$key],
@@ -433,26 +394,12 @@ class CartController extends Controller
                     // Send an order confirmation email to the user
                     Mail::to($request->email)->queue(new OrderConfirm($payment));
 
-                    $notification = [
-                        'message' => 'Payment successful.',
-                        'alert-type' => 'success',
-                    ];
-
-                    return redirect()->route('index')->with($notification);
+                    return redirect()->route('index')->with(FlashNotification::success('Payment successful.'));
                 } catch (\Exception $e) {
-                    throw new \Exception($e->getMessage());
-                    // Handle error
-                    $notification = [
-                        'message' => $e->getMessage(),
-                        'alert-type' => 'error',
-                    ];
-
-                    return back()->with($notification);
+                    return back()->with(FlashNotification::error('Payment failed: '.$e->getMessage()));
                 }
             } else {
-                // If the user selects cash delivery as the payment method, show a success message and redirect to the homepage
-
-                // Create a payment record with the user's details and total amount
+                // Cash delivery payment method
                 $payment = Payment::create([
                     'name' => $request->name,
                     'email' => $request->email,
@@ -465,9 +412,7 @@ class CartController extends Controller
                     'invoice_number' => 'ESO'.mt_rand(10000000, 99999999),
                 ]);
 
-                // Loop through the courses in the cart and create an order record for each course  The cvv field is required.
                 foreach ($request->course_title as $key => $course_title) {
-                    // Create an order record for the course
                     $course = [
                         'payment_id' => $payment->id,
                         'course_id' => $request->course_id[$key],
@@ -482,7 +427,6 @@ class CartController extends Controller
                     Order::create($course);
                 }
 
-                // Empty the cart
                 $request->session()->forget('cart');
                 $request->session()->forget('coupon');
 
@@ -494,14 +438,7 @@ class CartController extends Controller
                     $instructor->notify(new OrderComplate($request->name));
                 }
 
-                $request->session()->forget('cart');
-
-                $notification = [
-                    'message' => 'Cash Payment Submit Successfully.',
-                    'alert-type' => 'success',
-                ];
-
-                return redirect()->route('index')->with($notification);
+                return redirect()->route('index')->with(FlashNotification::success('Cash Payment Submitted Successfully.'));
             }
         }
     }
