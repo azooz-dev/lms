@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Events\OrderPlaced;
+use App\Listeners\NotifyInstructorsOfNewOrder;
+use App\Listeners\SendOrderConfirmationEmail;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -17,6 +20,10 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+        ],
+        OrderPlaced::class => [
+            SendOrderConfirmationEmail::class,
+            NotifyInstructorsOfNewOrder::class,
         ],
     ];
 
