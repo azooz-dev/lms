@@ -12,16 +12,18 @@ use App\Models\Post;
 use App\Models\Review;
 use App\Models\User;
 use App\Models\Wish_list;
+use App\Services\UserService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private readonly UserService $userService
+    ) {}
     /**
      * Display the frontend index page
      *
@@ -85,7 +87,7 @@ class UserController extends Controller
      */
     public function profile(string $id): View
     {
-        $user = User::find($id);
+        $user = $this->userService->getUserById((int) $id);
 
         return view('frontend.dashboard.profile', compact('user'));
     }
@@ -109,7 +111,7 @@ class UserController extends Controller
      */
     public function user_settings(string $id): View
     {
-        $user = User::find($id);
+        $user = $this->userService->getUserById((int) $id);
 
         return view('frontend.dashboard.settings', compact('user'));
     }
@@ -121,22 +123,13 @@ class UserController extends Controller
      */
     public function update_profile(UpdateUserProfileRequest $request, string $id): RedirectResponse
     {
-        $user = User::find($id);
-        $data = $request->validated();
-
         try {
-            if ($request->hasFile('photo')) {
-                // Delete existing photo if it exists
-                if (! empty($user->photo) && Storage::exists('public/upload/users_images/'.$user->photo)) {
-                    Storage::delete('public/upload/users_images/'.$user->photo);
-                }
-                $data['photo'] = date('YmdHis').'_'.$request->file('photo')->getClientOriginalName();
-                $request->file('photo')->storeAs('public/upload/users_images', $data['photo']);
-            } else {
-                unset($data['photo']);
-            }
-
-            $user->update($data);
+            $user = $this->userService->getUserById((int) $id);
+            $this->userService->updateProfile(
+                $user,
+                $request->validated(),
+                $request->file('photo')
+            );
 
             return redirect()->back()->with(FlashNotification::success('Profile Updated Successfully.'));
         } catch (Exception $e) {
@@ -144,16 +137,16 @@ class UserController extends Controller
         }
     }
 
-    public function change_password(ChangePasswordRequest $request, string $id)
+    public function change_password(ChangePasswordRequest $request, string $id): RedirectResponse
     {
-        if (! Hash::check($request->old_password, Auth::user()->password)) {
+        $user = Auth::user();
+
+        if (! $this->userService->verifyOldPassword($user, $request->old_password)) {
             return redirect()->back()->with(FlashNotification::error('The old password does not match.'));
         }
 
         try {
-            User::whereId($id)->update([
-                'password' => Hash::make($request->new_password),
-            ]);
+            $this->userService->changePassword($user, $request->new_password);
 
             return redirect()->back()->with(FlashNotification::success('The Password changed successfully.'));
         } catch (Exception $e) {
@@ -161,12 +154,11 @@ class UserController extends Controller
         }
     }
 
-    public function change_email(ChangeEmailRequest $request, string $id)
+    public function change_email(ChangeEmailRequest $request, string $id): RedirectResponse
     {
         try {
-            $user = User::find($id);
-            $user->email = $request->new_email;
-            $user->save();
+            $user = $this->userService->getUserById((int) $id);
+            $this->userService->changeEmail($user, $request->new_email);
 
             return redirect()->back()->with(FlashNotification::success('The Email changed successfully.'));
         } catch (Exception $e) {

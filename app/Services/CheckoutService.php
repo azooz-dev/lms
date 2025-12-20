@@ -1,0 +1,228 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Mail\OrderConfirm;
+use App\Models\Order;
+use App\Models\Payment;
+use App\Models\User;
+use App\Notifications\OrderComplate;
+use Illuminate\Support\Facades\Mail;
+use Stripe\StripeClient;
+use Stripe\Token;
+
+class CheckoutService
+{
+    public function __construct(
+        private readonly CouponService $couponService
+    ) {}
+
+    /**
+     * Calculate the total amount considering any applied coupon
+     */
+    public function calculateTotal(): float
+    {
+        return $this->couponService->getTotalWithCoupon();
+    }
+
+    /**
+     * Check if user has existing order for any of the courses
+     */
+    public function hasExistingOrder(array $courseIds, int $userId): bool
+    {
+        return Order::where(function ($query) use ($courseIds) {
+            $query->whereHas('course', function ($query) use ($courseIds) {
+                $query->whereIn('course_id', $courseIds);
+            });
+        })
+            ->where('user_id', $userId)
+            ->where('is_visible_to_user', '1')
+            ->exists();
+    }
+
+    /**
+     * Process payment via Stripe
+     *
+     * @throws \Exception
+     */
+    public function processStripePayment(array $cardData, float $amount): void
+    {
+        $apiKey = env('STRIPE_SECRET');
+        $stripe = new StripeClient(['api_key' => $apiKey]);
+
+        $token = Token::create([
+            'card' => [
+                'number' => $cardData['card_number'],
+                'exp_month' => $cardData['expiry_month'],
+                'exp_year' => $cardData['expiry_year'],
+                'cvc' => $cardData['cvv'],
+            ],
+        ]);
+
+        $stripe->charges->create([
+            'amount' => (int) ($amount * 100), // Stripe requires amount in cents
+            'currency' => 'usd',
+            'source' => $token->id,
+            'description' => 'Course purchase',
+        ]);
+    }
+
+    /**
+     * Create a payment record
+     */
+    public function createPayment(array $data): Payment
+    {
+        return Payment::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'address' => $data['address'],
+            'cash_delivery' => $data['cash_delivery'],
+            'total_amount' => $data['total_amount'],
+            'payment_type' => 'Direct Payment',
+            'status' => 'Pending',
+            'invoice_number' => 'ESO'.mt_rand(10000000, 99999999),
+        ]);
+    }
+
+    /**
+     * Create order records for each course
+     */
+    public function createOrders(Payment $payment, array $courses, int $userId): void
+    {
+        foreach ($courses as $course) {
+            Order::create([
+                'payment_id' => $payment->id,
+                'course_id' => $course['course_id'],
+                'course_title' => $course['course_title'],
+                'slug' => $course['slug'],
+                'course_image' => $course['image'],
+                'instructor_id' => $course['instructor_id'],
+                'course_price' => $course['price'],
+                'user_id' => $userId,
+            ]);
+        }
+    }
+
+    /**
+     * Send order confirmation email
+     */
+    public function sendOrderConfirmation(Payment $payment, string $email): void
+    {
+        Mail::to($email)->queue(new OrderConfirm($payment));
+    }
+
+    /**
+     * Notify instructors about new order
+     */
+    public function notifyInstructors(array $instructorIds, string $customerName): void
+    {
+        $uniqueInstructorIds = array_unique($instructorIds);
+
+        foreach ($uniqueInstructorIds as $instructorId) {
+            $instructor = User::find($instructorId);
+            if ($instructor) {
+                $instructor->notify(new OrderComplate($customerName));
+            }
+        }
+    }
+
+    /**
+     * Clear session data after successful checkout
+     */
+    public function clearCheckoutSession(): void
+    {
+        session()->forget('cart');
+        session()->forget('coupon');
+    }
+
+    /**
+     * Build courses array from request data
+     */
+    public function buildCoursesArray(array $requestData): array
+    {
+        $courses = [];
+
+        foreach ($requestData['course_title'] as $key => $courseTitle) {
+            $courses[] = [
+                'course_id' => $requestData['course_id'][$key],
+                'course_title' => $courseTitle,
+                'slug' => $requestData['slug'][$key],
+                'image' => $requestData['image'][$key],
+                'instructor_id' => $requestData['instructor_id'][$key],
+                'price' => $requestData['price'][$key],
+            ];
+        }
+
+        return $courses;
+    }
+
+    /**
+     * Process full checkout flow
+     *
+     * @return array{success: bool, message: string}
+     */
+    public function processCheckout(array $requestData, int $userId, bool $isCreditCard): array
+    {
+        $totalAmount = $this->calculateTotal();
+
+        // Check for existing orders
+        if ($this->hasExistingOrder($requestData['course_id'], $userId)) {
+            return [
+                'success' => false,
+                'message' => 'You have already enrolled in this course. Please check your order list.',
+            ];
+        }
+
+        try {
+            // Process Stripe payment if credit card
+            if ($isCreditCard) {
+                $this->processStripePayment([
+                    'card_number' => $requestData['card_number'],
+                    'expiry_month' => $requestData['expiry_month'],
+                    'expiry_year' => $requestData['expiry_year'],
+                    'cvv' => $requestData['cardCVV'],
+                ], $totalAmount);
+            }
+
+            // Create payment record
+            $payment = $this->createPayment([
+                'name' => $requestData['name'],
+                'email' => $requestData['email'],
+                'phone' => $requestData['phone'],
+                'address' => $requestData['address'],
+                'cash_delivery' => $requestData['cash_delivery'],
+                'total_amount' => $totalAmount,
+            ]);
+
+            // Create order records
+            $courses = $this->buildCoursesArray($requestData);
+            $this->createOrders($payment, $courses, $userId);
+
+            // Send confirmation email
+            $this->sendOrderConfirmation($payment, $requestData['email']);
+
+            // Notify instructors (only for cash delivery to match original behavior)
+            if (! $isCreditCard) {
+                $this->notifyInstructors($requestData['instructor_id'], $requestData['name']);
+            }
+
+            // Clear session
+            $this->clearCheckoutSession();
+
+            $message = $isCreditCard ? 'Payment successful.' : 'Cash Payment Submitted Successfully.';
+
+            return [
+                'success' => true,
+                'message' => $message,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Payment failed: '.$e->getMessage(),
+            ];
+        }
+    }
+}

@@ -10,99 +10,35 @@ use App\Http\Requests\Instructor\RegisterInstructorRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Course;
 use App\Models\User;
+use App\Services\DashboardService;
+use App\Services\UserService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 
 class AdminController extends Controller
 {
+    public function __construct(
+        private readonly DashboardService $dashboardService,
+        private readonly UserService $userService
+    ) {}
+
     /**
      * Render the admin dashboard view
      */
     public function dashboard(): View
     {
-        $id = Auth::user()->id;
-
-        // Get dashboard statistics
-        $totalOrders = \App\Models\Order::count();
-        $totalRevenue = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->sum('orders.course_price');
-        $totalCustomers = \App\Models\User::where('role', 'user')->count();
-        $totalCourses = \App\Models\Course::count();
-
-        // Get monthly sales data for chart
-        $monthlySales = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->whereYear('orders.created_at', date('Y'))
-            ->selectRaw('MONTH(orders.created_at) as month, SUM(orders.course_price) as total_sales, COUNT(*) as order_count')
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
-
-        // Get recent orders
-        $recentOrders = \App\Models\Order::with(['course', 'user', 'payment'])
-            ->orderBy('created_at', 'desc')
-            ->limit(6)
-            ->get();
-
-        // Calculate percentage changes (simplified - you can make this more sophisticated)
-        $lastWeekOrders = \App\Models\Order::whereBetween('created_at', [now()->subWeek(), now()])->count();
-        $previousWeekOrders = \App\Models\Order::whereBetween('created_at', [now()->subWeeks(2), now()->subWeek()])->count();
-        $orderChange = $previousWeekOrders > 0 ? (($lastWeekOrders - $previousWeekOrders) / $previousWeekOrders) * 100 : 0;
-
-        // Get additional statistics
-        $totalInstructors = \App\Models\User::where('role', 'instructor')->count();
-        $pendingOrders = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'pending')
-            ->count();
-        $completedOrders = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->count();
-        $totalReviews = \App\Models\Review::count();
-        $pendingReviews = \App\Models\Review::where('status', '0')->count();
-
-        $lastWeekRevenue = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->whereBetween('orders.created_at', [now()->subWeek(), now()])
-            ->sum('orders.course_price');
-        $previousWeekRevenue = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->whereBetween('orders.created_at', [now()->subWeeks(2), now()->subWeek()])
-            ->sum('orders.course_price');
-        $revenueChange = $previousWeekRevenue > 0 ? (($lastWeekRevenue - $previousWeekRevenue) / $previousWeekRevenue) * 100 : 0;
-
-        $lastWeekCustomers = \App\Models\User::where('role', 'user')
-            ->whereBetween('created_at', [now()->subWeek(), now()])
-            ->count();
-        $previousWeekCustomers = \App\Models\User::where('role', 'user')
-            ->whereBetween('created_at', [now()->subWeeks(2), now()->subWeek()])
-            ->count();
-        $customerChange = $previousWeekCustomers > 0 ? (($lastWeekCustomers - $previousWeekCustomers) / $previousWeekCustomers) * 100 : 0;
-
-        return view('admin.index', compact(
-            'id',
-            'totalOrders',
-            'totalRevenue',
-            'totalCustomers',
-            'totalCourses',
-            'monthlySales',
-            'recentOrders',
-            'orderChange',
-            'revenueChange',
-            'customerChange',
-            'totalInstructors',
-            'pendingOrders',
-            'completedOrders',
-            'totalReviews',
-            'pendingReviews'
-        ));
+        return view('admin.index', [
+            'id' => Auth::id(),
+            ...$this->dashboardService->getStatistics(),
+            'monthlySales' => $this->dashboardService->getMonthlySales(),
+            'recentOrders' => $this->dashboardService->getRecentOrders(),
+            ...$this->dashboardService->getPercentageChanges(),
+        ]);
     }
 
     /**
@@ -110,29 +46,7 @@ class AdminController extends Controller
      */
     public function getChartData(): JsonResponse
     {
-        // Get monthly sales data for chart
-        $monthlySales = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->whereYear('orders.created_at', date('Y'))
-            ->selectRaw('MONTH(orders.created_at) as month, SUM(orders.course_price) as total_sales, COUNT(*) as order_count')
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
-
-        // Get daily data for the current month
-        $dailySales = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'completed')
-            ->whereMonth('orders.created_at', date('m'))
-            ->whereYear('orders.created_at', date('Y'))
-            ->selectRaw('DATE(orders.created_at) as date, SUM(orders.course_price) as total_sales, COUNT(*) as order_count')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
-
-        return response()->json([
-            'monthlySales' => $monthlySales,
-            'dailySales' => $dailySales,
-        ]);
+        return response()->json($this->dashboardService->getChartData());
     }
 
     /**
@@ -162,8 +76,7 @@ class AdminController extends Controller
      */
     public function admin_profile(): View
     {
-        $id = Auth::user()->id;
-        $adminProfile = User::find($id);
+        $adminProfile = $this->userService->getUserById(Auth::id());
 
         return view('admin.admin_profile', compact('adminProfile'));
     }
@@ -173,21 +86,13 @@ class AdminController extends Controller
      */
     public function admin_update(ProfileUpdateRequest $request, string $id): RedirectResponse
     {
-        $admin = User::find($id);
-        $input = $request->validated();
-
         try {
-            if ($request->hasFile('photo')) {
-                if ($admin->photo && Storage::exists("public/upload/admin_images/$admin->photo")) {
-                    Storage::delete("public/upload/admin_images/$admin->photo");
-                }
-                $input['photo'] = date('YmdHis').'_'.$request->file('photo')->getClientOriginalName();
-                $request->file('photo')->storeAs('public/upload/admin_images', $input['photo']);
-            } else {
-                unset($input['photo']);
-            }
-
-            $admin->update($input);
+            $admin = $this->userService->getUserById((int) $id);
+            $this->userService->updateAdminProfile(
+                $admin,
+                $request->validated(),
+                $request->file('photo')
+            );
 
             return redirect()->back()->with(FlashNotification::success('Admin profile updated successfully.'));
         } catch (\Exception $e) {
@@ -205,12 +110,14 @@ class AdminController extends Controller
 
     public function update_password(ChangePasswordRequest $request, string $id): RedirectResponse
     {
-        if (! Hash::check($request->old_password, Auth::user()->password)) {
+        $user = Auth::user();
+
+        if (! $this->userService->verifyOldPassword($user, $request->old_password)) {
             return back()->with('error', 'The old password does not match.');
         }
 
         try {
-            User::whereId($id)->update(['password' => Hash::make($request->new_password)]);
+            $this->userService->changePassword($user, $request->new_password);
 
             return back()->with(FlashNotification::success('The Password changed successfully.'));
         } catch (\Exception $e) {
@@ -237,7 +144,7 @@ class AdminController extends Controller
 
     public function all_instructors(): View
     {
-        $instructors = User::where('role', 'instructor')->latest()->get();
+        $instructors = $this->userService->getAllInstructors();
 
         return view('admin.backend.instructor.all_instructors', compact('instructors'));
     }
@@ -250,27 +157,16 @@ class AdminController extends Controller
     public function update_instructor_status(string $id): JsonResponse
     {
         try {
-            // Find the instructor
-            $instructor = User::find($id);
+            $instructor = $this->userService->getUserById((int) $id);
+            $this->userService->toggleUserStatus($instructor);
 
-            // Toggle the instructor status
-            if ($instructor->status == '1') {
-                $instructor->status = '0';
-            } else {
-                $instructor->status = '1';
-            }
-
-            // Save the changes
-            $instructor->save();
-
-            // Return a success response
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return response()->json(['error' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-    public function become_instructor()
+    public function become_instructor(): View
     {
         return view('frontend.instructor.become_instructor');
     }
@@ -279,32 +175,14 @@ class AdminController extends Controller
      * Register a new instructor
      *
      * @param  RegisterInstructorRequest  $request  The validated request object
-     * @return \Illuminate\Http\RedirectResponse
      */
-    public function instructor_register(RegisterInstructorRequest $request)
+    public function instructor_register(RegisterInstructorRequest $request): RedirectResponse
     {
-        $validatedData = $request->validated();
-
-        // Save the instructor's photo if there is one
-        $photoName = null;
-        if ($request->hasFile('photo')) {
-            $photoName = date('YmdHis').'_'.$request->file('photo')->getClientOriginalName();
-            $request->file('photo')->storeAs('public/upload/instructor_images', $photoName);
-        }
-
         try {
-            User::create([
-                'name' => $validatedData['name'],
-                'username' => $validatedData['username'],
-                'email' => $validatedData['email'],
-                'phone' => $validatedData['phone'],
-                'photo' => $photoName,
-                'address' => $validatedData['address'],
-                'password' => Hash::make($validatedData['password']),
-                'role' => 'instructor',
-                'status' => '0',
-                'bio' => $validatedData['bio'] ?? null,
-            ]);
+            $this->userService->registerInstructor(
+                $request->validated(),
+                $request->file('photo')
+            );
 
             return redirect()
                 ->route('instructor.login')
@@ -356,29 +234,24 @@ class AdminController extends Controller
         return view('admin.backend.course.course_details', compact('course'));
     }
 
-    public function all_admins()
+    public function all_admins(): View
     {
-        $admins = User::where('role', 'admin')->get();
+        $admins = $this->userService->getAllAdmins();
 
         return view('admin.backend.pages.admin.all_admins', compact('admins'));
     }
 
-    public function add_admins()
+    public function add_admins(): View
     {
         $roles = Role::all();
 
         return view('admin.backend.pages.admin.add_admins', compact('roles'));
     }
 
-    public function store_admin(StoreAdminRequest $request)
+    public function store_admin(StoreAdminRequest $request): RedirectResponse
     {
         try {
-            $data = $request->validated();
-            $data['role'] = 'admin';
-            $data['password'] = Hash::make($data['password']);
-
-            $admin = User::create($data);
-            $admin->assignRole($request->role);
+            $this->userService->createAdmin($request->validated(), $request->role);
 
             return redirect()
                 ->route('admin.all_admins')
@@ -388,24 +261,19 @@ class AdminController extends Controller
         }
     }
 
-    public function edit_admin(string $id)
+    public function edit_admin(string $id): View
     {
-
-        $admin = User::find($id);
+        $admin = $this->userService->getUserById((int) $id);
         $roles = Role::all();
 
         return view('admin.backend.pages.admin.edit_admin', compact('admin', 'roles'));
     }
 
-    public function update_admin(UpdateAdminRequest $request, string $id)
+    public function update_admin(UpdateAdminRequest $request, string $id): RedirectResponse
     {
         try {
-            $data = $request->validated();
-            $data['role'] = 'admin';
-
-            $admin = User::find($id);
-            $admin->update($data);
-            $admin->syncRoles($request->role);
+            $admin = $this->userService->getUserById((int) $id);
+            $this->userService->updateAdmin($admin, $request->validated(), $request->role);
 
             return redirect()
                 ->route('admin.all_admins')
@@ -415,10 +283,11 @@ class AdminController extends Controller
         }
     }
 
-    public function delete_admin(string $id)
+    public function delete_admin(string $id): RedirectResponse
     {
         try {
-            User::find($id)->delete();
+            $admin = $this->userService->getUserById((int) $id);
+            $this->userService->deleteUser($admin);
 
             return redirect()->back()->with(FlashNotification::success('Admin deleted successfully.'));
         } catch (Exception $e) {
