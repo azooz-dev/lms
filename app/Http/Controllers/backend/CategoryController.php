@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\backend;
 
+use App\Helpers\FlashNotification;
 use App\Helpers\ImageResizer;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
@@ -50,19 +51,13 @@ class CategoryController extends Controller
 
             Category::create($data);
 
-            $notification = [
-                'message' => 'Category added successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('admin.all_categories')->with($notification);
+            return redirect()
+                ->route('admin.all_categories')
+                ->with(FlashNotification::success('Category added successfully.'));
         } catch (Exception $e) {
-            $notification = [
-                'message' => 'Oops! Something went wrong.'.$e->getMessage(),
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong.'.$e->getMessage()));
         }
     }
 
@@ -91,7 +86,7 @@ class CategoryController extends Controller
                 $data['image'] = hexdec(uniqid()).'.'.$request->file('image')->getClientOriginalExtension();
 
                 $resizedPath = public_path('storage/upload/category_images/'.$data['image']);
-                resizeAndSaveImage($request->file('image'), 370, 246, $resizedPath);
+                ImageResizer::resize($request->file('image'), 370, 246, $resizedPath);
 
                 // If the file exists in database and exists in storage folder
                 if (! empty($category->image) && file_exists('public/upload/category_images/'.$category->image)) {
@@ -104,33 +99,22 @@ class CategoryController extends Controller
                 $category->update($data);
 
                 // Return a success message
-                $notification = [
-                    'message' => 'Category updated successfully.',
-                    'alert-type' => 'success',
-                ];
-
-                return redirect()->route('admin.all_categories')->with($notification);
+                return redirect()
+                    ->route('admin.all_categories')
+                    ->with(FlashNotification::success('Category updated successfully.'));
             } else {
                 // If no image is provided, just update the category with new data
                 $data['category_slug'] = strtolower(str_replace(' ', '-', $data['category_name']));
                 $category->update($data);
 
                 // Return a success message
-                $notification = [
-                    'message' => 'Category updated successfully.',
-                    'alert-type' => 'success',
-                ];
-
-                return redirect()->route('admin.all_categories')->with($notification);
+                return redirect()
+                    ->route('admin.all_categories')
+                    ->with(FlashNotification::success('Category updated successfully.'));
             }
         } catch (Exception $e) {
             // Return an error message
-            $notification = [
-                'message' => 'Oops! something went wrong.',
-                'alert-type' => 'error',
-            ];
-
-            return back()->with($notification);
+            return back()->with(FlashNotification::error('Oops! something went wrong.'));
         }
     }
 
@@ -141,12 +125,11 @@ class CategoryController extends Controller
         // Check if the category has any subcategories
         if ($category->subCategories()->exists()) {
             // If subcategories exist, return an error message
-            $notification = [
-                'message' => 'Cannot delete this category because it has subcategories. Please delete all subcategories first.',
-                'alert-type' => 'error',
-            ];
-
-            return back()->with($notification);
+            return back()->with(
+                FlashNotification::error(
+                    'Cannot delete this category because it has subcategories. Please delete all subcategories first.'
+                )
+            );
         }
 
         // If no subcategories exist, proceed with the deletion
@@ -160,20 +143,10 @@ class CategoryController extends Controller
             $category->delete();
 
             // Return a success message
-            $notification = [
-                'message' => 'Category deleted successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return back()->with($notification);
+            return back()->with(FlashNotification::success('Category deleted successfully.'));
         } catch (Exception $e) {
             // Return an error message if the deletion fails
-            $notification = [
-                'message' => 'Oops! Something went wrong.',
-                'alert-type' => 'error',
-            ];
-
-            return back()->with($notification);
+            return back()->with(FlashNotification::error('Oops! Something went wrong.'));
         }
     }
 }
