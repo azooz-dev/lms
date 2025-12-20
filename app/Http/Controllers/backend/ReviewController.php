@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\backend;
 
+use App\Events\ReviewSubmitted;
 use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Review\StoreReviewRequest;
@@ -14,13 +15,16 @@ class ReviewController extends Controller
     {
         $courseModel = Course::find($course);
 
-        Review::create([
+        $review = Review::create([
             'course_id' => $courseModel->id,
             'user_id' => $id,
             'message' => $request->message,
             'rating' => $request->rate,
             'instructor_id' => $courseModel->instructor_id,
         ]);
+
+        // Dispatch event to notify instructor
+        ReviewSubmitted::dispatch($review);
 
         return redirect()->back()->with(FlashNotification::success('Review submitted successfully!'));
     }
