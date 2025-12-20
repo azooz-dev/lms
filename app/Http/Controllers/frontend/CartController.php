@@ -6,30 +6,20 @@ use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cart\ApplyCouponRequest;
 use App\Http\Requests\Cart\ProcessPaymentRequest;
-use App\Mail\OrderConfirm;
-use App\Models\Coupon;
 use App\Models\Course;
-use App\Models\Order;
-use App\Models\Payment;
-use App\Models\User;
-use App\Notifications\OrderComplate;
 use App\Services\CartService;
+use App\Services\CheckoutService;
 use App\Services\CouponService;
-use Carbon\Carbon;
-use Gloudemans\Shoppingcart\Facades\Cart;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
-use Stripe\StripeClient;
-use Stripe\Token;
 
 class CartController extends Controller
 {
     public function __construct(
         private readonly CartService $cartService,
-        private readonly CouponService $couponService
+        private readonly CouponService $couponService,
+        private readonly CheckoutService $checkoutService
     ) {}
 
     /**
@@ -169,133 +159,22 @@ class CartController extends Controller
      * Process payment for courses in the cart
      *
      * @param  ProcessPaymentRequest  $request  The validated request object containing the user's payment details
-     * @return \Illuminate\Http\Response
      */
-    public function payment_process(ProcessPaymentRequest $request)
+    public function payment_process(ProcessPaymentRequest $request): RedirectResponse
     {
-        // Check if a coupon is applied
-        if (session()->has('coupon')) {
-            $total_amount = session()->get('coupon')['total_amount'];
-        } else {
-            $total_amount = Cart::total();
+        $isCreditCard = $request->cash_delivery === 'credit_card';
+
+        $result = $this->checkoutService->processCheckout(
+            $request->all(),
+            Auth::id(),
+            $isCreditCard
+        );
+
+        if ($result['success']) {
+            return redirect()->route('index')->with(FlashNotification::success($result['message']));
         }
 
-        // Check if an order with the same courses and user exists
-        $existingOrder = Order::where(function ($query) use ($request) {
-            $query->whereHas('course', function ($query) use ($request) {
-                $query->whereIn('course_id', $request->course_id);
-            })->where('user_id', Auth::user()->id)->where('is_visible_to_user', '1');
-        })->first();
-
-        if ($existingOrder) {
-            return redirect()->back()->with(FlashNotification::error('You have already enrolled in this course. Please check your order list.'));
-        } else {
-            // Check the payment method
-            if ($request->cash_delivery == 'credit_card') {
-                try {
-                    // Initialize Stripe client
-                    $apiKey = env('STRIPE_SECRET');
-                    $stripe = new StripeClient(['api_key' => $apiKey]);
-
-                    $token = Token::create([
-                        'card' => [
-                            'number' => $request->card_number,
-                            'exp_month' => $request->expiry_month,
-                            'exp_year' => $request->expiry_year,
-                            'cvc' => $request->cardCVV,
-                        ],
-                    ]);
-
-                    // Charge the user's credit card
-                    $stripe->charges->create([
-                        'amount' => $total_amount * 100, // Stripe requires amount in cents
-                        'currency' => 'usd',
-                        'source' => $token->id,
-                        'description' => 'Course purchase',
-                    ]);
-
-                    // Create a payment record with the user's details and total amount
-                    $payment = Payment::create([
-                        'name' => $request->name,
-                        'email' => $request->email,
-                        'phone' => $request->phone,
-                        'address' => $request->address,
-                        'cash_delivery' => $request->cash_delivery,
-                        'total_amount' => $total_amount,
-                        'payment_type' => 'Direct Payment',
-                        'status' => 'Pending',
-                        'invoice_number' => 'ESO'.mt_rand(10000000, 99999999),
-                    ]);
-
-                    // Loop through the courses in the cart and create an order record for each course
-                    foreach ($request->course_title as $key => $course_title) {
-                        $course = [
-                            'payment_id' => $payment->id,
-                            'course_id' => $request->course_id[$key],
-                            'course_title' => $course_title,
-                            'slug' => $request->slug[$key],
-                            'course_image' => $request->image[$key],
-                            'instructor_id' => $request->instructor_id[$key],
-                            'course_price' => $request->price[$key],
-                            'user_id' => Auth::user()->id,
-                        ];
-
-                        Order::create($course);
-                    }
-
-                    // Empty the cart
-                    $request->session()->forget('cart');
-
-                    // Send an order confirmation email to the user
-                    Mail::to($request->email)->queue(new OrderConfirm($payment));
-
-                    return redirect()->route('index')->with(FlashNotification::success('Payment successful.'));
-                } catch (\Exception $e) {
-                    return back()->with(FlashNotification::error('Payment failed: '.$e->getMessage()));
-                }
-            } else {
-                // Cash delivery payment method
-                $payment = Payment::create([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'phone' => $request->phone,
-                    'address' => $request->address,
-                    'cash_delivery' => $request->cash_delivery,
-                    'total_amount' => $total_amount,
-                    'payment_type' => 'Direct Payment',
-                    'status' => 'Pending',
-                    'invoice_number' => 'ESO'.mt_rand(10000000, 99999999),
-                ]);
-
-                foreach ($request->course_title as $key => $course_title) {
-                    $course = [
-                        'payment_id' => $payment->id,
-                        'course_id' => $request->course_id[$key],
-                        'course_title' => $course_title,
-                        'slug' => $request->slug[$key],
-                        'course_image' => $request->image[$key],
-                        'instructor_id' => $request->instructor_id[$key],
-                        'course_price' => $request->price[$key],
-                        'user_id' => Auth::user()->id,
-                    ];
-
-                    Order::create($course);
-                }
-
-                $request->session()->forget('cart');
-                $request->session()->forget('coupon');
-
-                // Send an order confirmation email to the user
-                Mail::to($request->email)->queue(new OrderConfirm($payment));
-
-                foreach ($request->instructor_id as $instructor_id) {
-                    $instructor = User::find($instructor_id);
-                    $instructor->notify(new OrderComplate($request->name));
-                }
-
-                return redirect()->route('index')->with(FlashNotification::success('Cash Payment Submitted Successfully.'));
-            }
-        }
+        return redirect()->back()->with(FlashNotification::error($result['message']));
     }
 
     /**
