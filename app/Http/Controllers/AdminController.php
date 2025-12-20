@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\FlashNotification;
+use App\Http\Requests\Admin\StoreAdminRequest;
+use App\Http\Requests\Admin\UpdateAdminRequest;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\Instructor\RegisterInstructorRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Course;
 use App\Models\User;
@@ -13,7 +17,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 
@@ -186,19 +189,9 @@ class AdminController extends Controller
 
             $admin->update($input);
 
-            $notification = [
-                'message' => 'Admin profile updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::success('Admin profile updated successfully.'));
         } catch (\Exception $e) {
-            $notification = [
-                'message' => 'Something went wrong. Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Something went wrong. Please try again.'));
         }
     }
 
@@ -219,19 +212,9 @@ class AdminController extends Controller
         try {
             User::whereId($id)->update(['password' => Hash::make($request->new_password)]);
 
-            $notification = [
-                'message' => 'The Password changed successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return back()->with($notification);
+            return back()->with(FlashNotification::success('The Password changed successfully.'));
         } catch (\Exception $e) {
-            $notification = [
-                'message' => 'Something went wrong! Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return back()->with($notification);
+            return back()->with(FlashNotification::error('Something went wrong! Please try again.'));
         }
     }
 
@@ -295,56 +278,39 @@ class AdminController extends Controller
     /**
      * Register a new instructor
      *
-     * @return void
+     * @param  RegisterInstructorRequest  $request  The validated request object
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function instructor_register(Request $request)
+    public function instructor_register(RegisterInstructorRequest $request)
     {
-        // Validate the request data
-        $validatedData = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'phone' => ['required', 'string', 'max:20'],
-            'photo' => ['nullable', 'max:2048'],
-            'address' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'confirmed', Password::defaults(), 'min:8'],
-        ]);
+        $validatedData = $request->validated();
 
         // Save the instructor's photo if there is one
-
+        $photoName = null;
         if ($request->hasFile('photo')) {
-            $data['photo'] = date('YmdHis').'_'.$request->file('photo')->getClientOriginalName();
-            $request->file('photo')->storeAs('public/upload/instructor_images', $data['photo']);
+            $photoName = date('YmdHis').'_'.$request->file('photo')->getClientOriginalName();
+            $request->file('photo')->storeAs('public/upload/instructor_images', $photoName);
         }
 
         try {
-            // Create and save the new instructor
             User::create([
                 'name' => $validatedData['name'],
                 'username' => $validatedData['username'],
                 'email' => $validatedData['email'],
                 'phone' => $validatedData['phone'],
-                'photo' => $validatedData['photo'],
+                'photo' => $photoName,
                 'address' => $validatedData['address'],
                 'password' => Hash::make($validatedData['password']),
                 'role' => 'instructor',
                 'status' => '0',
-                'bio' => $request->bio,
+                'bio' => $validatedData['bio'] ?? null,
             ]);
 
-            $notification = [
-                'message' => 'Instructor registration successful. Please login to continue.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('instructor.login')->with($notification);
+            return redirect()
+                ->route('instructor.login')
+                ->with(FlashNotification::success('Instructor registration successful. Please login to continue.'));
         } catch (\Exception $e) {
-            $notification = [
-                'message' => 'Something went wrong. Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Something went wrong. Please try again.'));
         }
     }
 
@@ -404,40 +370,21 @@ class AdminController extends Controller
         return view('admin.backend.pages.admin.add_admins', compact('roles'));
     }
 
-    public function store_admin(Request $request)
+    public function store_admin(StoreAdminRequest $request)
     {
-
         try {
-            $data = $request->validate([
-                'name' => ['required', 'string', 'max:255'],
-                'username' => ['required', 'string', 'max:255', 'unique:users'],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-                'phone' => ['required', 'string', 'max:20'],
-                'photo' => ['nullable', 'max:2048'],
-                'address' => ['required', 'string', 'max:255'],
-                'password' => ['required', 'confirmed', Password::defaults(), 'min:8'],
-            ]);
+            $data = $request->validated();
             $data['role'] = 'admin';
             $data['password'] = Hash::make($data['password']);
 
             $admin = User::create($data);
-
             $admin->assignRole($request->role);
 
-            $notification = [
-                'message' => 'Admin created successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('admin.all_admins')->with($notification);
+            return redirect()
+                ->route('admin.all_admins')
+                ->with(FlashNotification::success('Admin created successfully.'));
         } catch (Exception $e) {
-
-            $notification = [
-                'message' => 'Something went wrong. Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Something went wrong. Please try again.'));
         }
     }
 
@@ -450,63 +397,32 @@ class AdminController extends Controller
         return view('admin.backend.pages.admin.edit_admin', compact('admin', 'roles'));
     }
 
-    public function update_admin(Request $request, string $id)
+    public function update_admin(UpdateAdminRequest $request, string $id)
     {
-
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$id],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$id],
-            'phone' => ['required', 'string', 'max:20'],
-            'photo' => ['nullable', 'max:2048'],
-            'address' => ['required', 'string', 'max:255'],
-        ]);
-
         try {
+            $data = $request->validated();
             $data['role'] = 'admin';
 
             $admin = User::find($id);
             $admin->update($data);
-
             $admin->syncRoles($request->role);
 
-            $notification = [
-                'message' => 'Admin updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('admin.all_admins')->with($notification);
+            return redirect()
+                ->route('admin.all_admins')
+                ->with(FlashNotification::success('Admin updated successfully.'));
         } catch (Exception $e) {
-
-            $notification = [
-                'message' => 'Something went wrong. Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Something went wrong. Please try again.'));
         }
     }
 
     public function delete_admin(string $id)
     {
-
         try {
             User::find($id)->delete();
 
-            $notification = [
-                'message' => 'Admin deleted successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::success('Admin deleted successfully.'));
         } catch (Exception $e) {
-
-            $notification = [
-                'message' => 'Oops, something went wrong. Please try again',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()->back()->with(FlashNotification::error('Oops, something went wrong. Please try again.'));
         }
     }
 }
