@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\InstructorRegistered;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -66,7 +67,7 @@ class UserService
             $photoName = $this->fileUploadService->uploadFile($photo, 'upload/instructor_images');
         }
 
-        return User::create([
+        $instructor = User::create([
             'name' => $data['name'],
             'username' => $data['username'],
             'email' => $data['email'],
@@ -78,6 +79,11 @@ class UserService
             'status' => '0',
             'bio' => $data['bio'] ?? null,
         ]);
+
+        // Dispatch event to send welcome email
+        InstructorRegistered::dispatch($instructor);
+
+        return $instructor;
     }
 
     /**

@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Mail\OrderConfirm;
+use App\Events\OrderPlaced;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\User;
-use App\Notifications\OrderComplate;
-use Illuminate\Support\Facades\Mail;
 use Stripe\StripeClient;
 use Stripe\Token;
 
@@ -107,26 +104,15 @@ class CheckoutService
     }
 
     /**
-     * Send order confirmation email
+     * Dispatch order placed event to handle email and notifications
      */
-    public function sendOrderConfirmation(Payment $payment, string $email): void
-    {
-        Mail::to($email)->queue(new OrderConfirm($payment));
-    }
-
-    /**
-     * Notify instructors about new order
-     */
-    public function notifyInstructors(array $instructorIds, string $customerName): void
-    {
-        $uniqueInstructorIds = array_unique($instructorIds);
-
-        foreach ($uniqueInstructorIds as $instructorId) {
-            $instructor = User::find($instructorId);
-            if ($instructor) {
-                $instructor->notify(new OrderComplate($customerName));
-            }
-        }
+    public function dispatchOrderPlacedEvent(
+        Payment $payment,
+        string $customerEmail,
+        array $instructorIds,
+        string $customerName
+    ): void {
+        OrderPlaced::dispatch($payment, $customerEmail, $instructorIds, $customerName);
     }
 
     /**
@@ -201,13 +187,13 @@ class CheckoutService
             $courses = $this->buildCoursesArray($requestData);
             $this->createOrders($payment, $courses, $userId);
 
-            // Send confirmation email
-            $this->sendOrderConfirmation($payment, $requestData['email']);
-
-            // Notify instructors (only for cash delivery to match original behavior)
-            if (! $isCreditCard) {
-                $this->notifyInstructors($requestData['instructor_id'], $requestData['name']);
-            }
+            // Dispatch event to handle email and notifications
+            $this->dispatchOrderPlacedEvent(
+                $payment,
+                $requestData['email'],
+                $requestData['instructor_id'],
+                $requestData['name']
+            );
 
             // Clear session
             $this->clearCheckoutSession();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\OrderConfirmed;
 use App\Models\Order;
 use App\Models\Payment;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -47,6 +48,9 @@ class OrderService
     public function confirmOrder(Payment $payment): void
     {
         $payment->update(['status' => 'Confirm']);
+
+        // Dispatch event to handle notifications
+        OrderConfirmed::dispatch($payment);
     }
 
     /**
