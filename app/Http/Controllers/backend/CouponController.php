@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\backend;
 
+use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Coupon\StoreCouponRequest;
+use App\Http\Requests\Coupon\StoreInstructorCouponRequest;
+use App\Http\Requests\Coupon\UpdateCouponRequest;
+use App\Http\Requests\Coupon\UpdateInstructorCouponRequest;
 use App\Models\Coupon;
 use App\Models\Course;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CouponController extends Controller
@@ -23,14 +27,9 @@ class CouponController extends Controller
         return view('admin.backend.coupon.add_coupon');
     }
 
-    public function store_coupon(Request $request)
+    public function store_coupon(StoreCouponRequest $request)
     {
-        // Validate the request data.
-        $data = $request->validate([
-            'coupon_name' => 'required|unique:coupons',
-            'coupon_discount' => 'required|numeric',
-            'coupon_validity' => 'required',
-        ]);
+        $data = $request->validated();
 
         // Convert the coupon_name to uppercase.
         $data['coupon_name'] = strtoupper($data['coupon_name']);
@@ -41,14 +40,9 @@ class CouponController extends Controller
         // Create a new Coupon record with the validated data.
         Coupon::create($data);
 
-        // Set the success notification message and type.
-        $notifications = [
-            'message' => 'Coupon added successfully.',
-            'alert-type' => 'success',
-        ];
-
-        // Redirect back to the all_coupons view with the success notification.
-        return redirect()->route('admin.all_coupons')->with($notifications);
+        return redirect()
+            ->route('admin.all_coupons')
+            ->with(FlashNotification::success('Coupon added successfully.'));
     }
 
     public function edit_coupon(string $id)
@@ -58,17 +52,12 @@ class CouponController extends Controller
         return view('admin.backend.coupon.edit_coupon', compact('coupon'));
     }
 
-    public function update_coupon(string $id, Request $request)
+    public function update_coupon(string $id, UpdateCouponRequest $request)
     {
-        // Validate the request data.
-        $data = $request->validate([
-            'coupon_name' => 'required|unique:coupons,coupon_name,'.$id,
-            'coupon_discount' => 'required|numeric',
-            'coupon_validity' => 'required',
-        ]);
+        $data = $request->validated();
 
         // Convert the coupon_name to uppercase.
-        $data['course_name'] = strtoupper($data['coupon_name']);
+        $data['coupon_name'] = strtoupper($data['coupon_name']);
 
         // Convert the coupon_validity to a date format (Y-m-d).
         $data['coupon_validity'] = Carbon::parse($data['coupon_validity'])->format('Y-m-d');
@@ -76,25 +65,18 @@ class CouponController extends Controller
         // Update the Coupon record with the validated data.
         Coupon::find($id)->update($data);
 
-        // Set the success notification message and type.
-        $notifications = [
-            'message' => 'Coupon updated successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return redirect()->route('admin.all_coupons')->with($notifications);
+        return redirect()
+            ->route('admin.all_coupons')
+            ->with(FlashNotification::success('Coupon updated successfully.'));
     }
 
     public function destroy_coupon(string $id)
     {
         Coupon::find($id)->delete();
 
-        $notifications = [
-            'message' => 'Coupon deleted successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return redirect()->route('admin.all_coupons')->with($notifications);
+        return redirect()
+            ->route('admin.all_coupons')
+            ->with(FlashNotification::success('Coupon deleted successfully.'));
     }
 
     public function all_instructor_coupons(string $id)
@@ -114,19 +96,13 @@ class CouponController extends Controller
     /**
      * Store a new instructor coupon.
      *
-     * @param  Request  $request  The HTTP request.
+     * @param  StoreInstructorCouponRequest  $request  The validated request.
      * @param  string  $id  The ID of the instructor.
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store_instructor_coupon(Request $request, string $id)
+    public function store_instructor_coupon(StoreInstructorCouponRequest $request, string $id)
     {
-        // Validate the request data.
-        $data = $request->validate([
-            'coupon_name' => 'required|unique:coupons', // Required and unique in the coupons table.
-            'coupon_discount' => 'required|numeric', // Required and numeric.
-            'coupon_validity' => 'required', // Required.
-            'course_id' => 'required', // Required.
-        ]);
+        $data = $request->validated();
 
         // Convert the coupon_name to uppercase.
         $data['coupon_name'] = strtoupper($data['coupon_name']);
@@ -140,14 +116,9 @@ class CouponController extends Controller
         // Create a new Coupon record with the validated data.
         Coupon::create($data);
 
-        // Set the success notification message and type.
-        $notifications = [
-            'message' => 'Coupon added successfully.',
-            'alert-type' => 'success',
-        ];
-
-        // Redirect back to the all_coupons view with the success notification.
-        return redirect()->route('instructor.all_coupons', $id)->with($notifications);
+        return redirect()
+            ->route('instructor.all_coupons', $id)
+            ->with(FlashNotification::success('Coupon added successfully.'));
     }
 
     public function edit_instructor_coupon(string $id)
@@ -158,43 +129,30 @@ class CouponController extends Controller
         return view('instructor.coupon.edit_coupon', compact('coupon', 'courses'));
     }
 
-    public function update_instructor_coupon(string $id, Request $request)
+    public function update_instructor_coupon(string $id, UpdateInstructorCouponRequest $request)
     {
-        // Validate the request data.
-        $data = $request->validate([
-            'coupon_name' => 'required|unique:coupons,coupon_name,'.$id,
-            'coupon_discount' => 'required|numeric',
-            'coupon_validity' => 'required',
-            'course_id' => 'required',
-        ]);
+        $data = $request->validated();
 
         // Convert the coupon_name to uppercase.
         $data['coupon_name'] = strtoupper($data['coupon_name']);
 
         // Convert the coupon_validity to a date format (Y-m-d).
-        $data['coupon_validity'] = \Carbon\Carbon::now()->format('Y-m-d H:i:s'); // Correctly formats the current time
+        $data['coupon_validity'] = Carbon::parse($data['coupon_validity'])->format('Y-m-d');
 
         // Update the Coupon record with the validated data.
         Coupon::find($id)->update($data);
 
-        // Set the success notification message and type.
-        $notifications = [
-            'message' => 'Coupon updated successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return redirect()->route('instructor.all_coupons', Auth::user()->id)->with($notifications);
+        return redirect()
+            ->route('instructor.all_coupons', Auth::user()->id)
+            ->with(FlashNotification::success('Coupon updated successfully.'));
     }
 
     public function delete_instructor_coupon(string $id)
     {
         Coupon::find($id)->delete();
 
-        $notifications = [
-            'message' => 'Coupon deleted successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return redirect()->route('instructor.all_coupons', Auth::user()->id)->with($notifications);
+        return redirect()
+            ->route('instructor.all_coupons', Auth::user()->id)
+            ->with(FlashNotification::success('Coupon deleted successfully.'));
     }
 }
