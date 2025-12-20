@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\backend;
 
+use App\Helpers\ImageResizer;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Exception;
@@ -37,7 +38,7 @@ class CategoryController extends Controller
             $image = $request->file('image');
             $filename = hexdec(uniqid()) . '.' . $image->getClientOriginalExtension();
             $resizedPath = public_path("storage/upload/category_images/{$filename}");
-            resizeAndSaveImage($image, 370, 246, $resizedPath);
+            ImageResizer::resize($image, 370, 246, $resizedPath);
 
             $data = [
                 'category_name' => $request->category_name,

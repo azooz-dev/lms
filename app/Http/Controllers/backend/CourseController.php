@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\backend;
 
-use App\Models\Course;
+use App\Helpers\ImageResizer;
+use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Course;
 use App\Models\Course_goal;
-use App\Models\SubCategory;
-use Illuminate\Http\Request;
 use App\Models\Course_Lecture;
 use App\Models\Course_Section;
-use App\Http\Controllers\Controller;
+use App\Models\SubCategory;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class CourseController extends Controller
@@ -83,7 +84,7 @@ class CourseController extends Controller
 
             // Process the image
             $resizedPath = public_path('storage/upload/course/images/' . $imgName);
-            resizeAndSaveImage($image, 370, 246, $resizedPath);
+            ImageResizer::resize($image, 370, 246, $resizedPath);
 
             // Save the image to storage
             // $img->save('storage/upload/course/images/' . $imgName);
