@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\backend;
 
+use App\Helpers\FlashNotification;
 use App\Helpers\ImageResizer;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Course\StoreCourseRequest;
+use App\Http\Requests\Course\UpdateCourseRequest;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\Course_goal;
@@ -54,19 +57,11 @@ class CourseController extends Controller
     /**
      * Stores the course information to the database
      *
-     * @param  \Illuminate\Http\Request  $request  The request object
+     * @param  StoreCourseRequest  $request  The validated request object
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store_course(Request $request)
+    public function store_course(StoreCourseRequest $request)
     {
-        // Validate the request data
-        $request->validate([
-            'title' => 'required|string',
-            'video_link' => 'required|mimes:mp4,webm|max:10000',
-            'category_id' => 'required',
-            'sub_category_id' => 'required',
-        ]);
-
         try {
             $image = $request->file('image');
             // Get the image file name with extension
@@ -134,21 +129,11 @@ class CourseController extends Controller
                 ]);
             }
 
-            // Set a success message and redirect to the all courses page
-            $notification = [
-                'message' => 'Course added successfully',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('instructor.all_courses', auth()->user()->id)->with($notification);
+            return redirect()
+                ->route('instructor.all_courses', auth()->user()->id)
+                ->with(FlashNotification::success('Course added successfully.'));
         } catch (\Exception $e) {
-            // Set an error message and redirect back to the form
-            $notification = [
-                'message' => 'Oops! something went wrong, Please try again.'.$e->getMessage(),
-                'alert-type' => 'error',
-            ];
-
-            return back()->with($notification);
+            return back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
@@ -170,37 +155,30 @@ class CourseController extends Controller
     /**
      * Update the course information
      *
-     * @param  \Illuminate\Http\Request  $request  The request object
+     * @param  UpdateCourseRequest  $request  The validated request object
      * @param  string  $id  The ID of the course
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update_course(Request $request, string $id)
+    public function update_course(UpdateCourseRequest $request, string $id)
     {
-        // Validate the request data
-        $request->validate([
-            'category_id' => 'required',
-            'sub_category_id' => 'required',
-        ]);
-
-        // Retrieve the course details
         $course = Course::find($id);
 
         try {
+            $data = $request->validated();
+
             if ($request->hasFile('image')) {
-                $data['image'] = hexdec(uniqid()).'.'.$request->file('image')->getClientOriginalExtension();
+                $imageName = hexdec(uniqid()).'.'.$request->file('image')->getClientOriginalExtension();
+                $resizedPath = public_path('storage/upload/course/images/'.$imageName);
+                ImageResizer::resize($request->file('image'), 370, 246, $resizedPath);
 
-                $resizedPath = public_path('storage/upload/course/images/'.$data['image']);
-                resizeAndSaveImage($request->file('image'), 370, 246, $resizedPath);
-
-                // If the file exists in database and exists in storage folder
-                if (! empty($course->image) && file_exists('public/upload/course/images/'.$course->image)) {
-                    unlink('public/upload/course/images/'.$course->image);
+                // Delete old image if exists
+                if (! empty($course->image) && file_exists(public_path('storage/upload/course/images/'.$course->image))) {
+                    unlink(public_path('storage/upload/course/images/'.$course->image));
                 }
 
-                $data = $request->except('image');
-                $data['image'] = $data['image'];
+                $data['image'] = $imageName;
             } else {
-                $data = $request->except('image');
+                unset($data['image']);
             }
 
             // Handle checkboxes
@@ -210,19 +188,11 @@ class CourseController extends Controller
 
             $course->update($data);
 
-            $notification = [
-                'message' => 'Course updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('instructor.all_courses', auth()->user()->id)->with($notification);
+            return redirect()
+                ->route('instructor.all_courses', auth()->user()->id)
+                ->with(FlashNotification::success('Course updated successfully.'));
         } catch (\Exception $e) {
-            $notification = [
-                'message' => 'Oops! something went wrong, Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return back()->with($notification);
+            return back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
@@ -254,21 +224,9 @@ class CourseController extends Controller
                 'video_link' => $videoName,
             ]);
 
-            $notification = [
-                'message' => 'Video updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            // Redirect the user back to the instructor's all courses page with a success message
-            return back()->with($notification);
+            return back()->with(FlashNotification::success('Video updated successfully.'));
         } catch (\Exception $e) {
-            $notification = [
-                'message' => 'Oops! something went wrong, Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            // Return an error message if an error occurred
-            return back()->with($notification);
+            return back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
@@ -282,30 +240,20 @@ class CourseController extends Controller
         });
 
         if (empty($filteredGoals)) {
-            $notification = [
-                'message' => 'Please select at least one goal.',
-                'alert-type' => 'error',
-            ];
-
-            return back()->with($notification);
-        } else {
-            // Delete existing goals for the course
-            $course->goals()->delete();
-
-            // Create new goals based on the filtered input
-            foreach ($filteredGoals as $goalText) {
-                $course->goals()->create([
-                    'goal' => $goalText,
-                ]);
-            }
-
-            $notification = [
-                'message' => 'Course goals updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return back()->with($notification);
+            return back()->with(FlashNotification::error('Please select at least one goal.'));
         }
+
+        // Delete existing goals for the course
+        $course->goals()->delete();
+
+        // Create new goals based on the filtered input
+        foreach ($filteredGoals as $goalText) {
+            $course->goals()->create([
+                'goal' => $goalText,
+            ]);
+        }
+
+        return back()->with(FlashNotification::success('Course goals updated successfully.'));
     }
 
     /**
@@ -335,21 +283,11 @@ class CourseController extends Controller
             // Delete the course
             $course->delete();
 
-            $notification = [
-                'message' => 'Course deleted successfully.',
-                'alert-type' => 'success',
-            ];
-
-            // Redirect the user to the instructor's all courses page
-            return redirect()->route('instructor.all_courses', auth()->user()->id)->with($notification);
+            return redirect()
+                ->route('instructor.all_courses', auth()->user()->id)
+                ->with(FlashNotification::success('Course deleted successfully.'));
         } catch (\Exception $e) {
-            $notification = [
-                'message' => 'Oops! something went wrong, Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            // Return an error message if an error occurred
-            return back()->with($notification);
+            return back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
@@ -374,12 +312,7 @@ class CourseController extends Controller
                 'section_title' => $request->section_title,  // Set the title of the section
             ]);
 
-        $notification = [  // Create a notification message
-            'message' => 'Section added successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return back()->with($notification);  // Redirect the user back to the previous page with the notification message
+        return back()->with(FlashNotification::success('Section added successfully.'));
     }
 
     public function destroy_section(string $id)
@@ -389,19 +322,10 @@ class CourseController extends Controller
         try {
             $section->lectures()->delete();
             $section->delete();
-            $notification = [
-                'message' => 'Section deleted successfully.',
-                'alert-type' => 'success',
-            ];
 
-            return back()->with($notification);
+            return back()->with(FlashNotification::success('Section deleted successfully.'));
         } catch (\Exception $e) {
-            $notification = [
-                'message' => 'Oops! something went wrong, Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return back()->with($notification);
+            return back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
@@ -456,25 +380,16 @@ class CourseController extends Controller
     public function update_lecture(Request $request, string $id)
     {
         try {
-            $lecture = Course_Lecture::find($id);  // Find the lecture with the given ID
-            $lecture->update([  // Update the lecture with the given data
+            $lecture = Course_Lecture::find($id);
+            $lecture->update([
                 'lecture_title' => $request->lecture_title,
                 'content' => $request->content,
                 'url' => $request->url,
             ]);
-            $notification = [  // Create a success message
-                'message' => 'Course Lecture updated successfully.',
-                'alert-type' => 'success',
-            ];
 
-            return redirect()->back()->with($notification);  // Redirect the user back with the success message
-        } catch (\Exception $e) {  // If an error occurred
-            $notification = [  // Create an error message
-                'message' => $e->getMessage(),
-                'alert-type' => 'error',
-            ];
-
-            return back()->with($notification);  // Return an error message if an error occurred
+            return redirect()->back()->with(FlashNotification::success('Course Lecture updated successfully.'));
+        } catch (\Exception $e) {
+            return back()->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
@@ -488,13 +403,9 @@ class CourseController extends Controller
      */
     public function destroy_lecture(string $id)
     {
-        $lecture = Course_Lecture::find($id);  // Find the lecture with the given ID
-        $lecture->delete();  // Delete the lecture
-        $notification = [  // Create a success message
-            'message' => 'Course Lecture deleted successfully.',
-            'alert-type' => 'success',
-        ];
+        $lecture = Course_Lecture::find($id);
+        $lecture->delete();
 
-        return back()->with($notification);  // Redirect the user back with the success message
+        return back()->with(FlashNotification::success('Course Lecture deleted successfully.'));
     }
 }
