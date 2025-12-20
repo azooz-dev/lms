@@ -224,4 +224,3 @@ class CourseService
         return strtolower(str_replace(' ', '-', $name));
     }
 }
-

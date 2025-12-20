@@ -137,4 +137,3 @@ class CouponService
         return (float) Cart::total();
     }
 }
-

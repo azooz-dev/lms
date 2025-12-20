@@ -173,4 +173,3 @@ class FileUploadService
         return Storage::url("public/{$directory}/{$filename}");
     }
 }
-

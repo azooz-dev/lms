@@ -200,4 +200,3 @@ class UserService
         $this->fileUploadService->deleteFromPublicStorage('upload/admin_images', $user->photo);
     }
 }
-
