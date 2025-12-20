@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -13,7 +15,10 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens;
+    use HasFactory;
+    use HasRoles;
+    use Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -51,28 +56,33 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'role' => UserRole::class,
+        'status' => UserStatus::class,
     ];
 
-
-    public function courses() {
+    public function courses()
+    {
         return $this->hasMany(Course::class, 'instructor_id', 'id');
     }
 
-    public function wishlistCourses(){
+    public function wishlistCourses()
+    {
         return $this->belongsToMany(Course::class, 'wish_lists', 'user_id', 'course_id');
     }
 
-    public function userOnline() {
-        return Cache::has('user-id-online'. $this->id);
+    public function userOnline()
+    {
+        return Cache::has('user-id-online'.$this->id);
     }
-
 
     /**
      * Get the distinct permission group names.
      *
      * @return array The array of permission group names.
      */
-    public static function get_permission_group_name() {
+    public static function get_permission_group_name()
+    {
 
         // Fetch the distinct group names from the Permission model.
         // The group_name field is selected and the results are plucked into an array.

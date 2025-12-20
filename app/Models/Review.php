@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReviewStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,17 +19,24 @@ class Review extends Model
         'status',
     ];
 
-    public function user() {
+    protected $casts = [
+        'status' => ReviewStatus::class,
+    ];
+
+    public function user()
+    {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function reviewsAvg() {
+    public function reviewsAvg()
+    {
         $reviews = $this->where('status', 1)->avg('rating');
 
         return $reviews;
     }
 
-    public function course() {
+    public function course()
+    {
         return $this->belongsTo(Course::class, 'course_id');
     }
 }

@@ -9,18 +9,19 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable  = [
+    protected $fillable = [
         'category_name',
         'category_slug',
         'image',
     ];
 
-
-    public function subCategories() {
+    public function subCategories()
+    {
         return $this->hasMany(SubCategory::class);
     }
 
-    public function courses() {
+    public function courses()
+    {
         return $this->hasMany(Course::class, 'category_id', 'id');
     }
 }

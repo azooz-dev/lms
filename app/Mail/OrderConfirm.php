@@ -4,7 +4,6 @@ namespace App\Mail;
 
 use App\Models\Payment;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -12,7 +11,8 @@ use Illuminate\Queue\SerializesModels;
 
 class OrderConfirm extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * Create a new message instance.
@@ -40,7 +40,7 @@ class OrderConfirm extends Mailable
         return new Content(
             view: 'mail.order_mail',
             with: [
-                'data' => $this->data
+                'data' => $this->data,
             ],
         );
     }

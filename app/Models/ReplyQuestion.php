@@ -15,16 +15,16 @@ class ReplyQuestion extends Model
         'reply',
         'course_id',
         'instructor_id',
-        'read_status'
+        'read_status',
     ];
 
-
-    public function question() {
+    public function question()
+    {
         return $this->belongsTo(Question::class, 'question_id', 'id');
     }
 
-    public function instructor() {
+    public function instructor()
+    {
         return $this->belongsTo(User::class, 'instructor_id', 'id');
     }
-
 }

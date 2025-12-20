@@ -14,8 +14,8 @@ class Course_Section extends Model
         'section_title',
     ];
 
-
-    public function lectures() {
+    public function lectures()
+    {
         return $this->hasMany(Course_Lecture::class, 'section_id', 'id');
     }
 }

@@ -18,6 +18,6 @@ class SiteSetting extends Model
         'twitter',
         'instagram',
         'linkedin',
-        'copyright'
+        'copyright',
     ];
 }

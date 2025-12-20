@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -14,10 +13,7 @@ class OrderComplate extends Notification
     /**
      * Create a new notification instance.
      */
-    public function __construct(public $name)
-    {
-
-    }
+    public function __construct(public $name) {}
 
     /**
      * Get the notification's delivery channels.
@@ -35,9 +31,9 @@ class OrderComplate extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-                    ->line('The introduction to the notification.')
-                    ->action('Notification Action', url('/'))
-                    ->line('Thank you for using our application!');
+            ->line('The introduction to the notification.')
+            ->action('Notification Action', url('/'))
+            ->line('Thank you for using our application!');
     }
 
     /**
@@ -48,7 +44,7 @@ class OrderComplate extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'message' => 'New Cod Enrollment In Your Course'
+            'message' => 'New Cod Enrollment In Your Course',
         ];
     }
 }

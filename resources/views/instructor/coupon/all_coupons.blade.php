@@ -56,7 +56,7 @@
                             <td class="text-center">
                                 <div class="d-flex justify-content-center">
                                     <a href="{{ route('instructor.edit_coupon', $coupon->id) }}" class="btn btn-info" style="margin-right: 10px; width: 100px">Edit</a>
-                                    <form action="{{ route('instructor.destory_coupon', $coupon->id) }}" method="POST">
+                                    <form action="{{ route('instructor.destroy_coupon', $coupon->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" id="delete" class="btn btn-danger" style="width: 100px">Delete</button>

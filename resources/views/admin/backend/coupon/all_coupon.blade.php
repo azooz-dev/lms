@@ -59,7 +59,7 @@
                                         <a href="{{ route('admin.edit_coupon', $coupon->id) }}" class="btn btn-info" style="margin-right: 10px; width: 100px">Edit</a>
                                     @endcan
                                     @can('coupon.delete')
-                                        <form action="{{ route('admin.coupon_destory', $coupon->id) }}" method="POST">
+                                        <form action="{{ route('admin.coupon_destroy', $coupon->id) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" id="delete" class="btn btn-danger" style="width: 100px">Delete</button>

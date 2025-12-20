@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Storage;
 
 class InstructorController extends Controller
 {
-    
     /**
      * Show the instructor dashboard page.
      *
@@ -28,7 +27,6 @@ class InstructorController extends Controller
     /**
      * Log the instructor out of the application.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function logout(Request $request)
@@ -44,21 +42,19 @@ class InstructorController extends Controller
         return redirect('/instructor/login');
     }
 
-
-
-    public function login() {
+    public function login()
+    {
         return view('instructor.login_dashboard');
     }
 
-    public function instructor_profile() {
+    public function instructor_profile()
+    {
         return view('instructor.instructor_profile');
     }
 
     /**
      * Update the instructor profile.
      *
-     * @param  ProfileUpdateRequest  $request
-     * @param  string  $id
      * @return \Illuminate\Http\RedirectResponse
      */
     public function instructor_update(ProfileUpdateRequest $request, string $id)
@@ -92,20 +88,19 @@ class InstructorController extends Controller
         return redirect()->back()->with($notification);
     }
 
-
     private function deleteOldPhoto(User $instructor)
     {
         // Check if the old photo exists in the storage
-        if (!empty($instructor->photo) && Storage::exists('public/upload/instructor_images/' . $instructor->photo)) {
+        if (! empty($instructor->photo) && Storage::exists('public/upload/instructor_images/'.$instructor->photo)) {
             // Delete the old photo from the storage
-            Storage::delete('public/upload/instructor_images/' . $instructor->photo);
+            Storage::delete('public/upload/instructor_images/'.$instructor->photo);
         }
     }
 
-
-    private function storePhoto(Request $request) {
+    private function storePhoto(Request $request)
+    {
         // Generate a unique file name using the current date and time
-        $fileName = date('YmdHis') . '_' . $request->file('photo')->getClientOriginalName();
+        $fileName = date('YmdHis').'_'.$request->file('photo')->getClientOriginalName();
 
         // Store the photo in the storage folder
         $request->file('photo')->storeAs('public/upload/instructor_images', $fileName);
@@ -113,16 +108,15 @@ class InstructorController extends Controller
         return $fileName;
     }
 
-
-    public function change_password() {
+    public function change_password()
+    {
         return view('instructor.change_password');
     }
-
 
     public function update_password(ChangePasswordRequest $request, string $id)
     {
         // Check if the old password is correct
-        if (!Hash::check($request->old_password, Auth::user()->password)) {
+        if (! Hash::check($request->old_password, Auth::user()->password)) {
             return back()->with('error', 'The old password does not match.');
         }
 
@@ -132,20 +126,20 @@ class InstructorController extends Controller
                 'password' => Hash::make($request->new_password),
             ]);
 
-            $notification = array(
-                'message' => "The Password changed successfully.",
+            $notification = [
+                'message' => 'The Password changed successfully.',
                 'alert-type' => 'success',
-            );
+            ];
+
             return back()->with($notification);
         } catch (Exception $e) {
-            $notification = array(
+            $notification = [
                 'message' => 'An error occurred while updating the password. Please try again later.',
                 'alert-type' => 'error',
-            );
+            ];
+
             // Return an error message if an error occurred
             return back()->with($notification);
         }
     }
-
-
 }

@@ -47,7 +47,7 @@
                                     <button type="button" class="btn btn-info" data-bs-toggle="modal" style="margin-right: 5px; width: 150px;" data-bs-target="#create-category-modal" data-action="edit" data-post="{{ json_encode($category->id) }}">
                                         Edit
                                     </button>
-                                    <form action="{{ route('admin.blog_category_destory', $category->id) }}" method="POST">
+                                    <form action="{{ route('admin.blog_category_destroy', $category->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" id="delete" class="btn btn-danger" style="width: 150px">Delete</button>

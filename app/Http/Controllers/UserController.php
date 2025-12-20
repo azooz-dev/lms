@@ -20,7 +20,6 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    
     /**
      * Display the frontend index page
      *
@@ -28,8 +27,6 @@ class UserController extends Controller
      * with a status of 1, the 6 most recent courses with a featured status of 1 and a
      * status of 1, and the 6 most recent posts. It also fetches all wish lists and
      * reviews with a status of 1. These are then passed to the view 'frontend.index'.
-     *
-     * @return View
      */
     public function index(): View
     {
@@ -64,41 +61,35 @@ class UserController extends Controller
                 'wishLists' => $wishList,
                 'posts' => $posts,
                 'coursesFeatured' => $coursesFeatured,
-                'reviews' => $reviews
+                'reviews' => $reviews,
             ]
         );
     }
 
     /**
      * Display the dashboard page
-     *
-     * @return View
      */
     public function dashboard(): View
     {
         $user = Auth::user();
+
         return view('frontend.dashboard.index', compact('user'));
     }
 
     /**
      * Display the profile page of a user
      *
-     * @param string $id User ID
-     * @return View
+     * @param  string  $id  User ID
      */
     public function profile(string $id): View
     {
         $user = User::find($id);
+
         return view('frontend.dashboard.profile', compact('user'));
     }
 
-
-
     /**
      * Logout the user
-     *
-     * @param Request $request
-     * @return RedirectResponse
      */
     public function logout(Request $request): RedirectResponse
     {
@@ -113,9 +104,6 @@ class UserController extends Controller
 
     /**
      * Show user settings view
-     *
-     * @param string $id
-     * @return View
      */
     public function user_settings(string $id): View
     {
@@ -124,20 +112,15 @@ class UserController extends Controller
         return view('frontend.dashboard.settings', compact('user'));
     }
 
-
     /**
      * Update user profile
-     *
-     * @param Request $request
-     * @param string $id
-     * @return RedirectResponse
      */
     public function update_profile(Request $request, string $id): RedirectResponse
     {
         $user = User::find($id);
         $dataValidated = $request->validate([
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . Auth::user()->id,
+            'username' => 'required|string|max:255|unique:users,username,'.Auth::user()->id,
             'photo' => 'sometimes|nullable|image|mimes:jpg,jpeg,png|max:2048',
             'phone' => 'required|string|max:20',
             'address' => 'required|string|max:255',
@@ -147,10 +130,10 @@ class UserController extends Controller
         try {
             if ($request->hasFile('photo')) {
                 // delete existing photo if it exists
-                if (!empty($user->photo) && Storage::exists('public/upload/users_images/' . $user->photo)) {
-                    Storage::delete('public/upload/users_images/' . $user->photo);
+                if (! empty($user->photo) && Storage::exists('public/upload/users_images/'.$user->photo)) {
+                    Storage::delete('public/upload/users_images/'.$user->photo);
                 }
-                $dataValidated['photo'] = date('YmdHis') . '_' . $request->file('photo')->getClientOriginalName();
+                $dataValidated['photo'] = date('YmdHis').'_'.$request->file('photo')->getClientOriginalName();
                 // store the new photo
                 $request->file('photo')->storeAs('public/upload/users_images', $dataValidated['photo']);
             } else {
@@ -164,25 +147,27 @@ class UserController extends Controller
                 'message' => 'Profile Updated Successfully',
                 'alert-type' => 'success',
             ];
+
             return redirect()->back()->with($notification);
         } catch (Exception $e) {
             $notification = [
                 'message' => 'Something went wrong! Please try again.',
                 'alert-type' => 'error',
             ];
+
             return redirect()->back()->with($notification);
         }
     }
 
-
     public function change_password(ChangePasswordRequest $request, string $id)
     {
         // if the old password is correct and matching with the current password
-        if (!Hash::check($request->old_password, Auth::user()->password)) {
-            $notification = array(
+        if (! Hash::check($request->old_password, Auth::user()->password)) {
+            $notification = [
                 'message' => 'The old password does not match.',
                 'alert-type' => 'error',
-            );
+            ];
+
             return redirect()->back()->with($notification);
         }
 
@@ -192,24 +177,24 @@ class UserController extends Controller
                 'password' => Hash::make($request->new_password),
             ]);
 
-            $notification = array(
-                'message' => "The Password changed successfully.",
+            $notification = [
+                'message' => 'The Password changed successfully.',
                 'alert-type' => 'success',
-            );
+            ];
 
             return redirect()->back()->with($notification);
         } catch (Exception $e) {
-            $notification = array(
+            $notification = [
                 'message' => 'Something went wrong! Please try again.',
-                'alert-type' => 'error'
-            );
+                'alert-type' => 'error',
+            ];
+
             return redirect()->back()->with($notification);
         }
     }
 
     public function change_email(ChangeEmailRequest $request, string $id)
     {
-
 
         try {
             // The request validated automatically, so you can proceed with updating the email
@@ -220,21 +205,19 @@ class UserController extends Controller
             // Optionally, send a confirmation email to the new email address
             // Mail::to($user->new_email)->send(new EmailChangeConfirmation($user));
 
-            $notification = array(
-                'message' => "The Email changed successfully.",
+            $notification = [
+                'message' => 'The Email changed successfully.',
                 'alert-type' => 'success',
-            );
+            ];
 
             return redirect()->back()->with($notification);
         } catch (Exception $e) {
-            $notification = array(
+            $notification = [
                 'message' => 'Something went wrong! Please try again.',
-                'alert-type' => 'error'
-            );
+                'alert-type' => 'error',
+            ];
+
             return redirect()->back()->with($notification);
         }
     }
-
-
-
 }

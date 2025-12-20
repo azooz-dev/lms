@@ -31,7 +31,7 @@
                         <div class="card-body p-4 d-flex justify-content-between">
                             <h5 style="font-size: 1rem;" class="mt-2">{{ $section->section_title }}</h5>
                             <div class="d-flex justify-content-between align-items-center">
-                                <form action="{{ route('instructor.section_destory', $section->id) }}" method="POST">
+                                <form action="{{ route('instructor.section_destroy', $section->id) }}" method="POST">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger">Delete Section</button>
@@ -49,7 +49,7 @@
 
                                     <div class="btn-group">
                                         <a href="{{ route('instructor.edit_lecture', $lecture->id) }}" class="btn btn-sm btn-primary">Edit</a> &nbsp;
-                                        <form action="{{ route('instructor.lecture_destory', $lecture->id) }}" method="POST" class="d-inline-block">
+                                        <form action="{{ route('instructor.lecture_destroy', $lecture->id) }}" method="POST" class="d-inline-block">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" id="delete" class="btn btn-sm btn-danger">Delete</button>

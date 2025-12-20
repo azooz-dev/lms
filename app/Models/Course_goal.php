@@ -11,10 +11,11 @@ class Course_goal extends Model
 
     protected $fillable = [
         'course_id',
-        'goal'
+        'goal',
     ];
 
-    public function course() {
+    public function course()
+    {
         return $this->belongsTo(Course::class);
     }
 }

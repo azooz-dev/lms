@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Coupon extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'coupon_name',
         'coupon_discount',
@@ -16,8 +17,8 @@ class Coupon extends Model
         'course_id',
     ];
 
-
-    public function course() {
+    public function course()
+    {
         return $this->belongsTo(Course::class);
     }
 }
