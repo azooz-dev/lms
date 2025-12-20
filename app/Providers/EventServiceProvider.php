@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Events\InstructorRegistered;
 use App\Events\OrderConfirmed;
 use App\Events\OrderPlaced;
+use App\Events\ReviewSubmitted;
+use App\Listeners\NotifyInstructorOfNewReview;
 use App\Listeners\NotifyInstructorsOfNewOrder;
 use App\Listeners\SendInstructorWelcomeEmail;
 use App\Listeners\SendOrderConfirmationEmail;
@@ -34,6 +36,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         InstructorRegistered::class => [
             SendInstructorWelcomeEmail::class,
+        ],
+        ReviewSubmitted::class => [
+            NotifyInstructorOfNewReview::class,
         ],
     ];
 
