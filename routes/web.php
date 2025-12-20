@@ -67,17 +67,6 @@ Route::controller(UserController::class)->group(function () {
 });
 
 
-Route::get('/gd-test', function () {
-    if (!function_exists('imagecreatefromstring')) {
-        return '❌ imagecreatefromstring() not available';
-    }
-
-    if (!extension_loaded('gd')) {
-        return '❌ GD extension not loaded';
-    }
-
-    return '✅ GD and imagecreatefromstring() are working!';
-});
 
 
 Route::get('/', 'UserController@index')->name('index');
@@ -89,6 +78,7 @@ Route::controller(AdminController::class)->group(function () {
     Route::middleware(['auth', 'roles:admin'])->prefix('admin')->group(function () {
         // Manage Profile Routes
         Route::get('/dashboard', 'dashboard')->name('admin.dashboard');
+        Route::get('/chart-data', 'getChartData')->name('admin.chart_data');
         Route::get('/logout', 'logout')->name('admin.logout');
         Route::get('/profile', 'admin_profile')->name('admin.profile');
         Route::put('/update/{update}', 'admin_update')->name('admin.update');

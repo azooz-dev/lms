@@ -28,7 +28,113 @@ class AdminController extends Controller
     public function dashboard(): View
     {
         $id = Auth::user()->id;
-        return view('admin.index', compact('id'));
+
+        // Get dashboard statistics
+        $totalOrders = \App\Models\Order::count();
+        $totalRevenue = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->sum('orders.course_price');
+        $totalCustomers = \App\Models\User::where('role', 'user')->count();
+        $totalCourses = \App\Models\Course::count();
+
+        // Get monthly sales data for chart
+        $monthlySales = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->whereYear('orders.created_at', date('Y'))
+            ->selectRaw('MONTH(orders.created_at) as month, SUM(orders.course_price) as total_sales, COUNT(*) as order_count')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Get recent orders
+        $recentOrders = \App\Models\Order::with(['course', 'user', 'payment'])
+            ->orderBy('created_at', 'desc')
+            ->limit(6)
+            ->get();
+
+        // Calculate percentage changes (simplified - you can make this more sophisticated)
+        $lastWeekOrders = \App\Models\Order::whereBetween('created_at', [now()->subWeek(), now()])->count();
+        $previousWeekOrders = \App\Models\Order::whereBetween('created_at', [now()->subWeeks(2), now()->subWeek()])->count();
+        $orderChange = $previousWeekOrders > 0 ? (($lastWeekOrders - $previousWeekOrders) / $previousWeekOrders) * 100 : 0;
+
+        // Get additional statistics
+        $totalInstructors = \App\Models\User::where('role', 'instructor')->count();
+        $pendingOrders = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'pending')
+            ->count();
+        $completedOrders = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->count();
+        $totalReviews = \App\Models\Review::count();
+        $pendingReviews = \App\Models\Review::where('status', '0')->count();
+
+        $lastWeekRevenue = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->whereBetween('orders.created_at', [now()->subWeek(), now()])
+            ->sum('orders.course_price');
+        $previousWeekRevenue = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->whereBetween('orders.created_at', [now()->subWeeks(2), now()->subWeek()])
+            ->sum('orders.course_price');
+        $revenueChange = $previousWeekRevenue > 0 ? (($lastWeekRevenue - $previousWeekRevenue) / $previousWeekRevenue) * 100 : 0;
+
+        $lastWeekCustomers = \App\Models\User::where('role', 'user')
+            ->whereBetween('created_at', [now()->subWeek(), now()])
+            ->count();
+        $previousWeekCustomers = \App\Models\User::where('role', 'user')
+            ->whereBetween('created_at', [now()->subWeeks(2), now()->subWeek()])
+            ->count();
+        $customerChange = $previousWeekCustomers > 0 ? (($lastWeekCustomers - $previousWeekCustomers) / $previousWeekCustomers) * 100 : 0;
+
+        return view('admin.index', compact(
+            'id',
+            'totalOrders',
+            'totalRevenue',
+            'totalCustomers',
+            'totalCourses',
+            'monthlySales',
+            'recentOrders',
+            'orderChange',
+            'revenueChange',
+            'customerChange',
+            'totalInstructors',
+            'pendingOrders',
+            'completedOrders',
+            'totalReviews',
+            'pendingReviews'
+        ));
+    }
+
+    /**
+     * Get chart data for AJAX requests
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getChartData(): JsonResponse
+    {
+        // Get monthly sales data for chart
+        $monthlySales = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->whereYear('orders.created_at', date('Y'))
+            ->selectRaw('MONTH(orders.created_at) as month, SUM(orders.course_price) as total_sales, COUNT(*) as order_count')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Get daily data for the current month
+        $dailySales = \App\Models\Order::join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->whereMonth('orders.created_at', date('m'))
+            ->whereYear('orders.created_at', date('Y'))
+            ->selectRaw('DATE(orders.created_at) as date, SUM(orders.course_price) as total_sales, COUNT(*) as order_count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        return response()->json([
+            'monthlySales' => $monthlySales,
+            'dailySales' => $dailySales
+        ]);
     }
 
     /**
