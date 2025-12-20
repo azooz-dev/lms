@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\backend;
 
+use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Blog\StoreBlogCategoryRequest;
+use App\Http\Requests\Blog\StorePostRequest;
+use App\Http\Requests\Blog\UpdateBlogCategoryRequest;
+use App\Http\Requests\Blog\UpdatePostRequest;
 use App\Models\BlogCategory;
 use App\Models\Post;
 use App\Models\Tag;
 use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Imagick\Driver;
@@ -22,63 +26,38 @@ class BlogController extends Controller
         return view('admin.backend.blogCategory.all_blog_category', compact('categories'));
     }
 
-    public function store_blog_category(Request $request)
+    public function store_blog_category(StoreBlogCategoryRequest $request)
     {
-
-        $data = $request->validate([
-            'category_name' => 'required|unique:blog_categories,category_name',
-        ]);
-
+        $data = $request->validated();
         $data['category_slug'] = strtolower(str_replace(' ', '-', $data['category_name']));
 
         BlogCategory::create($data);
 
-        $notification = [
-            'message' => 'Blog Category Added Successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return redirect()->back()->with($notification);
+        return redirect()->back()->with(FlashNotification::success('Blog Category Added Successfully.'));
     }
 
     public function blog_category_edit(string $id)
     {
-
         $category = BlogCategory::find($id);
 
         return response()->json(['category' => $category]);
     }
 
-    public function update_blog_category(Request $request, string $id)
+    public function update_blog_category(UpdateBlogCategoryRequest $request, string $id)
     {
-
-        $data = $request->validate([
-            'category_name' => 'required|unique:blog_categories,category_name,'.$id,
-        ]);
-
+        $data = $request->validated();
         $data['category_slug'] = strtolower(str_replace(' ', '-', $data['category_name']));
 
         BlogCategory::find($id)->update($data);
 
-        $notification = [
-            'message' => 'Blog Category Updated Successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return redirect()->back()->with($notification);
+        return redirect()->back()->with(FlashNotification::success('Blog Category Updated Successfully.'));
     }
 
     public function delete_blog_category(string $id)
     {
-
         BlogCategory::find($id)->delete();
 
-        $notification = [
-            'message' => 'Blog Category Deleted Successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return redirect()->back()->with($notification);
+        return redirect()->back()->with(FlashNotification::success('Blog Category Deleted Successfully.'));
     }
 
     public function all_posts()
@@ -95,45 +74,35 @@ class BlogController extends Controller
         return view('admin.backend.posts.add_posts', compact('categories'));
     }
 
-    public function store_post(Request $request, string $id)
+    public function store_post(StorePostRequest $request, string $id)
     {
-
-        $data = $request->validate([
-            'category_id' => 'required',
-            'title' => 'required|string',
-            'description' => 'required',
-            'image' => 'required',
-        ]);
+        $data = $request->validated();
 
         $data['slug'] = strtolower(str_replace(' ', '-', $data['title']));
-        $data['category_id'] = $request->category_id;
         $data['admin_id'] = $id;
 
         try {
             $manager = new ImageManager(new Driver);
             $data['image'] = hexdec(uniqid()).'.'.$request->file('image')->getClientOriginalExtension();
-            $path = $request->file('image')->getRealPath(); // Get the real path of the uploaded file
+            $path = $request->file('image')->getRealPath();
 
-            // Check if the file exists and is readable
             if (! file_exists($path) || ! is_readable($path)) {
                 throw new Exception('File not found or not readable.');
             }
 
-            // Process the image
             $img = $manager->read($request->file('image'))->resize(370, 247)->toJpeg(80);
             $img->save('storage/upload/posts_images/'.$data['image']);
 
-            $post = POST::create($data);
+            $post = Post::create($data);
 
-            if ($request->has('tag')) {
+            if ($request->has('tag') && ! empty($request->tag)) {
                 $tags = $request->tag;
-
                 $words = explode(',', $tags);
 
-                foreach ($words as $key => $word) {
+                foreach ($words as $word) {
                     $tag = Tag::create([
-                        'name' => $word,
-                        'slug' => strtolower(str_replace(' ', '-', $word)),
+                        'name' => trim($word),
+                        'slug' => strtolower(str_replace(' ', '-', trim($word))),
                     ]);
 
                     DB::table('post_tag')->insert([
@@ -143,19 +112,13 @@ class BlogController extends Controller
                 }
             }
 
-            $notification = [
-                'message' => 'Post created successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('admin.all_posts')->with($notification);
+            return redirect()
+                ->route('admin.all_posts')
+                ->with(FlashNotification::success('Post created successfully.'));
         } catch (Exception $e) {
-            $notification = [
-                'message' => 'Oops! Something went wrong. Please try again.',
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
@@ -172,112 +135,78 @@ class BlogController extends Controller
     /**
      * Updates an existing blog post
      *
-     * @param  \Illuminate\Http\Request  $request  The request object
+     * @param  UpdatePostRequest  $request  The validated request object
      * @param  string  $id  The ID of the post
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update_post(Request $request, string $id)
+    public function update_post(UpdatePostRequest $request, string $id)
     {
-
-        // Get the post instance
         $post = Post::find($id);
-
-        // Validate the request data
-        $data = $request->validate([
-            'title' => 'required|string',
-            'description' => 'required',
-        ]);
+        $data = $request->validated();
 
         try {
             // Process the image if new image is uploaded
             if ($request->hasFile('image')) {
-                // Create an image manager instance with the GD driver
                 $manager = new ImageManager(new Driver);
 
-                // If the file exists in database and exists in storage folder
+                // Delete old image if exists
                 if (! empty($post->image) && Storage::exists('public/upload/posts_images/'.$post->image)) {
                     Storage::delete('public/upload/posts_images/'.$post->image);
                 }
 
-                // Get the file name with extension
                 $data['image'] = hexdec(uniqid()).'.'.$request->file('image')->getClientOriginalExtension();
-
-                // Process the image
                 $img = $manager->read($request->file('image'))->resize(370, 247)->toJpeg(80);
-
-                // Save the image to storage
                 $img->save('storage/upload/posts_images/'.$data['image']);
             }
 
             // Update the post data
             $data['slug'] = strtolower(str_replace(' ', '-', $data['title']));
-            $data['category_id'] = $request->category_id;
+            if ($request->filled('category_id')) {
+                $data['category_id'] = $request->category_id;
+            }
 
-            // Oops! Something went wrong. Please try again.Method IlluminateDatabaseEloquentCollection::detach does not exist.
-
-            // Update the post
             $post->update($data);
 
             // Manage tags
-            $tags = $request->tag;
-
-            // Detach existing tags
             $post->tags()->detach();
 
-            // Attach new tags
-            $words = explode(',', $tags);
+            if ($request->has('tag') && ! empty($request->tag)) {
+                $words = explode(',', $request->tag);
 
-            foreach ($words as $word) {
-                $tag = Tag::create([
-                    'name' => $word,
-                    'slug' => strtolower(str_replace(' ', '-', $word)),
-                ]);
+                foreach ($words as $word) {
+                    $tag = Tag::create([
+                        'name' => trim($word),
+                        'slug' => strtolower(str_replace(' ', '-', trim($word))),
+                    ]);
 
-                DB::table('post_tag')->insert([
-                    'post_id' => $post->id,
-                    'tag_id' => $tag->id,
-                ]);
+                    DB::table('post_tag')->insert([
+                        'post_id' => $post->id,
+                        'tag_id' => $tag->id,
+                    ]);
+                }
             }
 
-            // Redirect to all posts page with success notification
-            $notification = [
-                'message' => 'Post updated successfully.',
-                'alert-type' => 'success',
-            ];
-
-            return redirect()->route('admin.all_posts')->with($notification);
+            return redirect()
+                ->route('admin.all_posts')
+                ->with(FlashNotification::success('Post updated successfully.'));
         } catch (Exception $e) {
-            // Redirect to back with error notification
-            $notification = [
-                'message' => 'Oops! Something went wrong. Please try again.'.$e->getMessage(),
-                'alert-type' => 'error',
-            ];
-
-            return redirect()->back()->with($notification);
+            return redirect()
+                ->back()
+                ->with(FlashNotification::error('Oops! Something went wrong. '.$e->getMessage()));
         }
     }
 
     public function delete_post(string $id)
     {
-
         $post = Post::find($id);
-
-        // Detach existing tags
         $post->tags()->detach();
-
         $post->delete();
 
-        $notification = [
-            'message' => 'Post Deleted Successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return back()->with($notification);
+        return back()->with(FlashNotification::success('Post Deleted Successfully.'));
     }
 
     public function blog_details(string $slug)
     {
-
         $post = Post::where('slug', $slug)->first();
         $categories = BlogCategory::latest()->get();
         $posts = Post::latest()->limit(3)->get();
@@ -287,7 +216,6 @@ class BlogController extends Controller
 
     public function blog_category_details(string $id)
     {
-
         $category = BlogCategory::find($id);
         $category_posts = Post::where('category_id', $id)->paginate(2);
         $categories = BlogCategory::latest()->get();
