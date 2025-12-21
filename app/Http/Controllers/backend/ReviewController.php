@@ -1,66 +1,64 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\backend;
 
-use App\Events\ReviewSubmitted;
 use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Review\StoreReviewRequest;
-use App\Models\Course;
-use App\Models\Review;
+use App\Services\ReviewService;
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class ReviewController extends Controller
 {
-    public function review_store(string $id, string $course, StoreReviewRequest $request)
+    public function __construct(
+        private readonly ReviewService $reviewService
+    ) {}
+
+    public function review_store(string $id, string $course, StoreReviewRequest $request): RedirectResponse
     {
-        $courseModel = Course::find($course);
-
-        $review = Review::create([
-            'course_id' => $courseModel->id,
-            'user_id' => $id,
-            'message' => $request->message,
-            'rating' => $request->rate,
-            'instructor_id' => $courseModel->instructor_id,
-        ]);
-
-        // Dispatch event to notify instructor
-        ReviewSubmitted::dispatch($review);
+        $this->reviewService->createReview(
+            (int) $id,
+            (int) $course,
+            $request->validated()
+        );
 
         return redirect()->back()->with(FlashNotification::success('Review submitted successfully!'));
     }
 
-    public function pending_reviews()
+    public function pending_reviews(): View
     {
-        $reviews = Review::where('status', '0')->orderBy('id', 'DESC')->get();
+        $reviews = $this->reviewService->getPendingReviews();
 
         return view('admin.backend.reviews.pending_reviews', compact('reviews'));
     }
 
-    public function update_review_status(string $id)
+    public function update_review_status(string $id): JsonResponse
     {
         try {
-            $review = Review::find($id);
-
-            // Toggle the review status
-            $review->status = $review->status == '1' ? '0' : '1';
-            $review->save();
+            $review = $this->reviewService->findById((int) $id);
+            $this->reviewService->toggleReviewStatus($review);
 
             return response()->json(['success' => true]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-    public function active_reviews()
+    public function active_reviews(): View
     {
-        $reviews = Review::where('status', '1')->orderBy('id', 'DESC')->get();
+        $reviews = $this->reviewService->getActiveReviews();
 
         return view('admin.backend.reviews.active_reviews', compact('reviews'));
     }
 
-    public function instructor_reviews(string $id)
+    public function instructor_reviews(string $id): View
     {
-        $reviews = Review::where('instructor_id', $id)->where('status', '1')->orderBy('id', 'DESC')->get();
+        $reviews = $this->reviewService->getInstructorReviews((int) $id);
 
         return view('instructor.reviews.all_reviews', compact('reviews'));
     }

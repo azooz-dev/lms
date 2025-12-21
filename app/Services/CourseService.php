@@ -7,13 +7,40 @@ namespace App\Services;
 use App\Models\Course;
 use App\Models\Course_Lecture;
 use App\Models\Course_Section;
+use App\Repositories\Contracts\CourseRepositoryInterface;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 
 class CourseService
 {
     public function __construct(
-        private readonly FileUploadService $fileUploadService
+        private readonly FileUploadService $fileUploadService,
+        private readonly CourseRepositoryInterface $courseRepository
     ) {}
+
+    /**
+     * Get all courses latest
+     */
+    public function getAllCourses(): Collection
+    {
+        return $this->courseRepository->getAllLatest();
+    }
+
+    /**
+     * Find a course by ID
+     */
+    public function findById(int $id): ?Course
+    {
+        return $this->courseRepository->find($id);
+    }
+
+    /**
+     * Toggle course status
+     */
+    public function toggleCourseStatus(Course $course): Course
+    {
+        return $this->courseRepository->toggleStatus($course);
+    }
 
     /**
      * Create a new course with image, video, and goals

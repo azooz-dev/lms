@@ -46,6 +46,14 @@ class OrderService
     }
 
     /**
+     * Find an order by ID
+     */
+    public function findOrderById(int $id): ?Order
+    {
+        return $this->orderRepository->find($id);
+    }
+
+    /**
      * Confirm an order by updating payment status and dispatching event
      */
     public function confirmOrder(Payment $payment): void

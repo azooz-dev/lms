@@ -13,6 +13,8 @@ interface SubCategoryRepositoryInterface extends RepositoryInterface
 
     public function getByCategoryId(int $categoryId): Collection;
 
+    public function findByIdAndSlug(int $id, string $slug): ?SubCategory;
+
     public function createWithSlug(array $data): SubCategory;
 
     public function updateWithSlug(SubCategory $subCategory, array $data): SubCategory;

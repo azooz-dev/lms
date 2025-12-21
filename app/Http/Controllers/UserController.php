@@ -1,16 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Helpers\FlashNotification;
 use App\Http\Requests\ChangeEmailRequest;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\User\UpdateUserProfileRequest;
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\Post;
-use App\Models\Review;
-use App\Models\Wish_list;
+use App\Services\HomeService;
 use App\Services\UserService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
@@ -21,53 +19,16 @@ use Illuminate\View\View;
 class UserController extends Controller
 {
     public function __construct(
-        private readonly UserService $userService
+        private readonly UserService $userService,
+        private readonly HomeService $homeService
     ) {}
 
     /**
      * Display the frontend index page
-     *
-     * This function fetches the 6 most recent categories, the 6 most recent courses
-     * with a status of 1, the 6 most recent courses with a featured status of 1 and a
-     * status of 1, and the 6 most recent posts. It also fetches all wish lists and
-     * reviews with a status of 1. These are then passed to the view 'frontend.index'.
      */
     public function index(): View
     {
-        // Get the 6 most recent categories
-        $categories = Category::latest()->get();
-
-        // Get the 6 most recent courses with a status of 1
-        $courses = Course::where('status', '1')->latest()->limit(6)->get();
-
-        // Get the 6 most recent courses with a featured status of 1 and a status of 1
-        $coursesFeatured = Course::where('featured', '1')
-            ->where('status', '1')
-            ->latest()
-            ->limit(6)
-            ->get();
-
-        // Get all wish lists
-        $wishList = Wish_list::all();
-
-        // Get the 6 most recent posts
-        $posts = Post::latest()->limit(6)->get();
-
-        // Get all reviews with a status of 1
-        $reviews = Review::where('status', '1')->get();
-
-        // Pass the variables to the view
-        return view(
-            'frontend.index',
-            [
-                'categories' => $categories,
-                'courses' => $courses,
-                'wishLists' => $wishList,
-                'posts' => $posts,
-                'coursesFeatured' => $coursesFeatured,
-                'reviews' => $reviews,
-            ]
-        );
+        return view('frontend.index', $this->homeService->getIndexPageData());
     }
 
     /**
@@ -82,8 +43,6 @@ class UserController extends Controller
 
     /**
      * Display the profile page of a user
-     *
-     * @param  string  $id  User ID
      */
     public function profile(string $id): View
     {
@@ -118,8 +77,6 @@ class UserController extends Controller
 
     /**
      * Update user profile
-     *
-     * @param  UpdateUserProfileRequest  $request  The validated request object
      */
     public function update_profile(UpdateUserProfileRequest $request, string $id): RedirectResponse
     {

@@ -20,6 +20,16 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
         return Category::latest()->get();
     }
 
+    public function getAllOrdered(string $column, string $direction = 'asc'): Collection
+    {
+        return Category::orderBy($column, $direction)->get();
+    }
+
+    public function findByIdAndSlug(int $id, string $slug): ?Category
+    {
+        return Category::where('id', $id)->where('category_slug', $slug)->first();
+    }
+
     public function hasSubCategories(Category $category): bool
     {
         return $category->subCategories()->exists();
