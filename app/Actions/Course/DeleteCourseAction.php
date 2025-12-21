@@ -31,4 +31,3 @@ class DeleteCourseAction
         $course->delete();
     }
 }
-

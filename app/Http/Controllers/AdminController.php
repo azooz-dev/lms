@@ -13,7 +13,6 @@ use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\Instructor\RegisterInstructorRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Course;
-use App\Models\User;
 use App\Services\DashboardService;
 use App\Services\UserService;
 use Exception;

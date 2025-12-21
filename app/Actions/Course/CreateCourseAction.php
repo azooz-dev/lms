@@ -85,4 +85,3 @@ class CreateCourseAction
         return strtolower(str_replace(' ', '-', $name));
     }
 }
-

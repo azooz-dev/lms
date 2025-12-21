@@ -26,7 +26,6 @@ class CartController extends Controller
      * Add a course to the cart
      *
      * @param  string  $id  The course id
-     * @return JsonResponse
      */
     public function store_cart(string $id): JsonResponse
     {

@@ -28,6 +28,7 @@ class UserController extends Controller
         private readonly UpdateUserProfileAction $updateUserProfileAction,
         private readonly ChangePasswordAction $changePasswordAction
     ) {}
+
     /**
      * Display the frontend index page
      *

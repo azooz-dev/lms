@@ -24,4 +24,3 @@ class CreateAdminAction
         return $admin;
     }
 }
-

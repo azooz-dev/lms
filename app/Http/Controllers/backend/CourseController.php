@@ -28,6 +28,7 @@ class CourseController extends Controller
         private readonly UpdateCourseAction $updateCourseAction,
         private readonly DeleteCourseAction $deleteCourseAction
     ) {}
+
     public function all_courses_by_instructor(string $id)
     {
         $courses = Course::where('instructor_id', $id)->orderBy('id', 'desc')->get();

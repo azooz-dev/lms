@@ -143,4 +143,3 @@ class ProcessCheckoutAction
         session()->forget('coupon');
     }
 }
-

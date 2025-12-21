@@ -48,4 +48,3 @@ class UpdateCourseAction
         return $course;
     }
 }
-

@@ -25,4 +25,3 @@ class ConfirmOrderAction
         OrderConfirmed::dispatch($payment);
     }
 }
-
