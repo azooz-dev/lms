@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\backend;
 
-use App\Actions\Order\ConfirmOrderAction;
-use App\Actions\Order\GenerateInvoiceAction;
 use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
@@ -18,9 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 class OrderController extends Controller
 {
     public function __construct(
-        private readonly OrderService $orderService,
-        private readonly ConfirmOrderAction $confirmOrderAction,
-        private readonly GenerateInvoiceAction $generateInvoiceAction
+        private readonly OrderService $orderService
     ) {}
 
     public function pending_order(): View
@@ -45,7 +41,7 @@ class OrderController extends Controller
     public function update_order_status(string $id): RedirectResponse
     {
         $payment = $this->orderService->getPayment((int) $id);
-        $this->confirmOrderAction->handle($payment);
+        $this->orderService->confirmOrder($payment);
 
         return redirect()
             ->route('admin.confirm_order')
@@ -81,7 +77,7 @@ class OrderController extends Controller
     public function instructor_invoice_download(string $id): Response
     {
         $payment = $this->orderService->getPayment((int) $id);
-        $pdf = $this->generateInvoiceAction->handle($payment);
+        $pdf = $this->orderService->generateInvoicePdf($payment);
 
         return $pdf->download('invoice.pdf');
     }
