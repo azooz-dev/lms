@@ -31,4 +31,3 @@ class CreatePaymentRecord
         return $context;
     }
 }
-

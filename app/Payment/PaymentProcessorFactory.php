@@ -19,8 +19,8 @@ class PaymentProcessorFactory
     public function __construct()
     {
         // Register available processors
-        $this->register(new StripePaymentProcessor());
-        $this->register(new CashPaymentProcessor());
+        $this->register(new StripePaymentProcessor);
+        $this->register(new CashPaymentProcessor);
     }
 
     /**
@@ -57,4 +57,3 @@ class PaymentProcessorFactory
         return array_keys($this->processors);
     }
 }
-

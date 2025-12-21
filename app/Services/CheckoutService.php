@@ -47,7 +47,7 @@ class CheckoutService
         $context = new CheckoutContext($requestData, $userId, $paymentType);
 
         try {
-            $pipeline = new CheckoutPipeline();
+            $pipeline = new CheckoutPipeline;
 
             $result = $pipeline
                 ->pipe(new ValidateCart($this->cartService))
@@ -56,8 +56,8 @@ class CheckoutService
                 ->pipe(new ProcessPayment($this->paymentFactory))
                 ->pipe(new CreatePaymentRecord($this->paymentRepository))
                 ->pipe(new CreateOrders($this->orderRepository))
-                ->pipe(new DispatchOrderEvents())
-                ->pipe(new ClearCheckoutSession())
+                ->pipe(new DispatchOrderEvents)
+                ->pipe(new ClearCheckoutSession)
                 ->process($context);
 
             if ($result->hasFailed()) {

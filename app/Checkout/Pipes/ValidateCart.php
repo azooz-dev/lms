@@ -25,4 +25,3 @@ class ValidateCart
         return $context;
     }
 }
-

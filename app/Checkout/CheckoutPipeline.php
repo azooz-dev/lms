@@ -38,4 +38,3 @@ class CheckoutPipeline
         return $context;
     }
 }
-
