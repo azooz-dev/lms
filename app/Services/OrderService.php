@@ -4,22 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Actions\Order\ConfirmOrderAction;
-use App\Actions\Order\GenerateInvoiceAction;
+use App\Events\OrderConfirmed;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Repositories\Contracts\OrderRepositoryInterface;
 use App\Repositories\Contracts\PaymentRepositoryInterface;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class OrderService
 {
     public function __construct(
         private readonly OrderRepositoryInterface $orderRepository,
-        private readonly PaymentRepositoryInterface $paymentRepository,
-        private readonly ConfirmOrderAction $confirmOrderAction,
-        private readonly GenerateInvoiceAction $generateInvoiceAction
+        private readonly PaymentRepositoryInterface $paymentRepository
     ) {}
 
     /**
@@ -47,11 +46,14 @@ class OrderService
     }
 
     /**
-     * Confirm an order by updating payment status
+     * Confirm an order by updating payment status and dispatching event
      */
     public function confirmOrder(Payment $payment): void
     {
-        $this->confirmOrderAction->handle($payment);
+        $this->paymentRepository->confirm($payment);
+
+        // Dispatch event to handle notifications
+        OrderConfirmed::dispatch($payment);
     }
 
     /**
@@ -95,7 +97,15 @@ class OrderService
      */
     public function generateInvoicePdf(Payment $payment): \Barryvdh\DomPDF\PDF
     {
-        return $this->generateInvoiceAction->handle($payment);
+        // Ensure course images are available for PDF
+        $this->prepareCourseImagesForPdf($payment);
+
+        return Pdf::loadView('instructor.orders.invoice_order', compact('payment'))
+            ->setPaper('a4')
+            ->setOption([
+                'tempDir' => public_path(),
+                'chroot' => public_path(),
+            ]);
     }
 
     /**
@@ -124,6 +134,31 @@ class OrderService
 
         if ($notification) {
             $notification->markAsRead();
+        }
+    }
+
+    /**
+     * Copy course images to public path for PDF generation
+     */
+    private function prepareCourseImagesForPdf(Payment $payment): void
+    {
+        // Ensure the destination directory exists
+        $destDir = public_path('course/images');
+        if (! is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+
+        foreach ($payment->orders as $order) {
+            if (! $order->course || empty($order->course->image)) {
+                continue;
+            }
+
+            $destinationPath = public_path('course/images/'.$order->course->image);
+            $sourcePath = Storage::disk('public')->path('upload/course/images/'.$order->course->image);
+
+            if (! file_exists($destinationPath) && file_exists($sourcePath)) {
+                copy($sourcePath, $destinationPath);
+            }
         }
     }
 }

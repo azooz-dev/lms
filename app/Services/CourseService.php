@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Actions\Course\CreateCourseAction;
-use App\Actions\Course\DeleteCourseAction;
-use App\Actions\Course\UpdateCourseAction;
 use App\Models\Course;
 use App\Models\Course_Lecture;
 use App\Models\Course_Section;
@@ -15,10 +12,7 @@ use Illuminate\Http\UploadedFile;
 class CourseService
 {
     public function __construct(
-        private readonly FileUploadService $fileUploadService,
-        private readonly CreateCourseAction $createCourseAction,
-        private readonly UpdateCourseAction $updateCourseAction,
-        private readonly DeleteCourseAction $deleteCourseAction
+        private readonly FileUploadService $fileUploadService
     ) {}
 
     /**
@@ -26,7 +20,45 @@ class CourseService
      */
     public function createCourse(array $data, UploadedFile $image, UploadedFile $video, array $goals, int $instructorId): Course
     {
-        return $this->createCourseAction->handle($data, $image, $video, $goals, $instructorId);
+        // Upload image with resizing
+        $imageName = $this->fileUploadService->uploadImage(
+            $image,
+            'upload/course/images',
+            370,
+            246
+        );
+
+        // Upload video
+        $videoName = $this->fileUploadService->uploadVideo($video, 'upload/course/videos');
+
+        // Create the course
+        $course = Course::create([
+            'category_id' => $data['category_id'],
+            'sub_category_id' => $data['sub_category_id'],
+            'instructor_id' => $instructorId,
+            'image' => $imageName,
+            'name' => $data['name'],
+            'title' => $data['title'],
+            'slug' => $this->generateSlug($data['name']),
+            'description' => $data['description'] ?? null,
+            'video_link' => $videoName,
+            'course_level' => $data['level'] ?? null,
+            'duration' => $data['duration'] ?? null,
+            'resources' => $data['resources'] ?? null,
+            'selling_price' => $data['selling_price'] ?? null,
+            'discount_price' => $data['discount_price'] ?? null,
+            'certificate' => $data['certificate'] ?? null,
+            'prerequisites' => $data['prerequisites'] ?? null,
+            'best_seller' => $data['best_seller'] ?? null,
+            'featured' => $data['featured'] ?? null,
+            'highest_rated' => $data['highest_rated'] ?? null,
+            'status' => '1',
+        ]);
+
+        // Create course goals
+        $this->createGoals($course, $goals);
+
+        return $course;
     }
 
     /**
@@ -34,7 +66,33 @@ class CourseService
      */
     public function updateCourse(Course $course, array $data, ?UploadedFile $image = null): Course
     {
-        return $this->updateCourseAction->handle($course, $data, $image);
+        $updateData = $data;
+
+        if ($image) {
+            // Upload new image
+            $imageName = $this->fileUploadService->uploadImage(
+                $image,
+                'upload/course/images',
+                370,
+                246
+            );
+
+            // Delete old image
+            $this->fileUploadService->deleteFromPublicStorage('upload/course/images', $course->image);
+
+            $updateData['image'] = $imageName;
+        } else {
+            unset($updateData['image']);
+        }
+
+        // Handle checkboxes
+        $updateData['best_seller'] = isset($updateData['best_seller']) ? '1' : '0';
+        $updateData['featured'] = isset($updateData['featured']) ? '1' : '0';
+        $updateData['highest_rated'] = isset($updateData['highest_rated']) ? '1' : '0';
+
+        $course->update($updateData);
+
+        return $course;
     }
 
     /**
@@ -83,7 +141,17 @@ class CourseService
      */
     public function deleteCourse(Course $course): void
     {
-        $this->deleteCourseAction->handle($course);
+        // Delete image
+        $this->fileUploadService->deleteFromPublicStorage('upload/course/images', $course->image);
+
+        // Delete video
+        $this->fileUploadService->deleteFromPublicStorage('upload/course/videos', $course->video_link);
+
+        // Delete goals
+        $course->goals()->delete();
+
+        // Delete the course
+        $course->delete();
     }
 
     /**
@@ -138,5 +206,25 @@ class CourseService
     public function deleteLecture(Course_Lecture $lecture): void
     {
         $lecture->delete();
+    }
+
+    /**
+     * Create goals for a course
+     */
+    private function createGoals(Course $course, array $goals): void
+    {
+        foreach ($goals as $goalText) {
+            $course->goals()->create([
+                'goal' => $goalText,
+            ]);
+        }
+    }
+
+    /**
+     * Generate a URL-friendly slug from course name
+     */
+    private function generateSlug(string $name): string
+    {
+        return strtolower(str_replace(' ', '-', $name));
     }
 }
