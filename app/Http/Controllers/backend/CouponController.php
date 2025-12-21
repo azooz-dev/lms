@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\backend;
 
 use App\Helpers\FlashNotification;
@@ -8,148 +10,110 @@ use App\Http\Requests\Coupon\StoreCouponRequest;
 use App\Http\Requests\Coupon\StoreInstructorCouponRequest;
 use App\Http\Requests\Coupon\UpdateCouponRequest;
 use App\Http\Requests\Coupon\UpdateInstructorCouponRequest;
-use App\Models\Coupon;
-use App\Models\Course;
-use Carbon\Carbon;
+use App\Services\CouponService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class CouponController extends Controller
 {
-    public function all_coupons()
+    public function __construct(
+        private readonly CouponService $couponService
+    ) {}
+
+    public function all_coupons(): View
     {
-        $coupons = Coupon::latest()->get();
+        $coupons = $this->couponService->getAllCoupons();
 
         return view('admin.backend.coupon.all_coupon', compact('coupons'));
     }
 
-    public function add_coupon()
+    public function add_coupon(): View
     {
         return view('admin.backend.coupon.add_coupon');
     }
 
-    public function store_coupon(StoreCouponRequest $request)
+    public function store_coupon(StoreCouponRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-
-        // Convert the coupon_name to uppercase.
-        $data['coupon_name'] = strtoupper($data['coupon_name']);
-
-        // Convert the coupon_validity to a date format (Y-m-d).
-        $data['coupon_validity'] = Carbon::parse($data['coupon_validity'])->format('Y-m-d');
-
-        // Create a new Coupon record with the validated data.
-        Coupon::create($data);
+        $this->couponService->createCoupon($request->validated());
 
         return redirect()
             ->route('admin.all_coupons')
             ->with(FlashNotification::success('Coupon added successfully.'));
     }
 
-    public function edit_coupon(string $id)
+    public function edit_coupon(string $id): View
     {
-        $coupon = Coupon::find($id);
+        $coupon = $this->couponService->findById((int) $id);
 
         return view('admin.backend.coupon.edit_coupon', compact('coupon'));
     }
 
-    public function update_coupon(string $id, UpdateCouponRequest $request)
+    public function update_coupon(string $id, UpdateCouponRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-
-        // Convert the coupon_name to uppercase.
-        $data['coupon_name'] = strtoupper($data['coupon_name']);
-
-        // Convert the coupon_validity to a date format (Y-m-d).
-        $data['coupon_validity'] = Carbon::parse($data['coupon_validity'])->format('Y-m-d');
-
-        // Update the Coupon record with the validated data.
-        Coupon::find($id)->update($data);
+        $coupon = $this->couponService->findById((int) $id);
+        $this->couponService->updateCoupon($coupon, $request->validated());
 
         return redirect()
             ->route('admin.all_coupons')
             ->with(FlashNotification::success('Coupon updated successfully.'));
     }
 
-    public function destroy_coupon(string $id)
+    public function destroy_coupon(string $id): RedirectResponse
     {
-        Coupon::find($id)->delete();
+        $coupon = $this->couponService->findById((int) $id);
+        $this->couponService->deleteCoupon($coupon);
 
         return redirect()
             ->route('admin.all_coupons')
             ->with(FlashNotification::success('Coupon deleted successfully.'));
     }
 
-    public function all_instructor_coupons(string $id)
+    public function all_instructor_coupons(string $id): View
     {
-        $coupons = Coupon::where('instructor_id', $id)->latest()->get();
+        $coupons = $this->couponService->getInstructorCoupons((int) $id);
 
         return view('instructor.coupon.all_coupons', compact('coupons'));
     }
 
-    public function add_instructor_coupon(string $id)
+    public function add_instructor_coupon(string $id): View
     {
-        $courses = Course::where('instructor_id', $id)->latest()->get();
+        $courses = $this->couponService->getInstructorCourses((int) $id);
 
         return view('instructor.coupon.add_coupon', compact('courses'));
     }
 
-    /**
-     * Store a new instructor coupon.
-     *
-     * @param  StoreInstructorCouponRequest  $request  The validated request.
-     * @param  string  $id  The ID of the instructor.
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function store_instructor_coupon(StoreInstructorCouponRequest $request, string $id)
+    public function store_instructor_coupon(StoreInstructorCouponRequest $request, string $id): RedirectResponse
     {
-        $data = $request->validated();
-
-        // Convert the coupon_name to uppercase.
-        $data['coupon_name'] = strtoupper($data['coupon_name']);
-
-        // Convert the coupon_validity to a date format (Y-m-d).
-        $data['coupon_validity'] = Carbon::parse($data['coupon_validity'])->format('Y-m-d');
-
-        // Set the instructor_id to the given ID.
-        $data['instructor_id'] = $id;
-
-        // Create a new Coupon record with the validated data.
-        Coupon::create($data);
+        $this->couponService->createInstructorCoupon($request->validated(), (int) $id);
 
         return redirect()
             ->route('instructor.all_coupons', $id)
             ->with(FlashNotification::success('Coupon added successfully.'));
     }
 
-    public function edit_instructor_coupon(string $id)
+    public function edit_instructor_coupon(string $id): View
     {
-        $coupon = Coupon::find($id);
-        $courses = Course::where('instructor_id', $coupon->instructor_id)->latest()->get();
+        $coupon = $this->couponService->findById((int) $id);
+        $courses = $this->couponService->getInstructorCourses($coupon->instructor_id);
 
         return view('instructor.coupon.edit_coupon', compact('coupon', 'courses'));
     }
 
-    public function update_instructor_coupon(string $id, UpdateInstructorCouponRequest $request)
+    public function update_instructor_coupon(string $id, UpdateInstructorCouponRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-
-        // Convert the coupon_name to uppercase.
-        $data['coupon_name'] = strtoupper($data['coupon_name']);
-
-        // Convert the coupon_validity to a date format (Y-m-d).
-        $data['coupon_validity'] = Carbon::parse($data['coupon_validity'])->format('Y-m-d');
-
-        // Update the Coupon record with the validated data.
-        Coupon::find($id)->update($data);
+        $coupon = $this->couponService->findById((int) $id);
+        $this->couponService->updateCoupon($coupon, $request->validated());
 
         return redirect()
             ->route('instructor.all_coupons', Auth::user()->id)
             ->with(FlashNotification::success('Coupon updated successfully.'));
     }
 
-    public function delete_instructor_coupon(string $id)
+    public function delete_instructor_coupon(string $id): RedirectResponse
     {
-        Coupon::find($id)->delete();
+        $coupon = $this->couponService->findById((int) $id);
+        $this->couponService->deleteCoupon($coupon);
 
         return redirect()
             ->route('instructor.all_coupons', Auth::user()->id)
