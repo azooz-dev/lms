@@ -12,8 +12,10 @@ use App\Repositories\Contracts\CouponRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\OrderRepositoryInterface;
 use App\Repositories\Contracts\PaymentRepositoryInterface;
+use App\Repositories\Contracts\PermissionRepositoryInterface;
 use App\Repositories\Contracts\PostRepositoryInterface;
 use App\Repositories\Contracts\ReviewRepositoryInterface;
+use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\SubCategoryRepositoryInterface;
 use App\Repositories\Contracts\TagRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
@@ -21,8 +23,10 @@ use App\Repositories\CouponRepository;
 use App\Repositories\CourseRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
+use App\Repositories\PermissionRepository;
 use App\Repositories\PostRepository;
 use App\Repositories\ReviewRepository;
+use App\Repositories\RoleRepository;
 use App\Repositories\SubCategoryRepository;
 use App\Repositories\TagRepository;
 use App\Repositories\UserRepository;
@@ -47,6 +51,8 @@ class RepositoryServiceProvider extends ServiceProvider
         BlogCategoryRepositoryInterface::class => BlogCategoryRepository::class,
         PostRepositoryInterface::class => PostRepository::class,
         TagRepositoryInterface::class => TagRepository::class,
+        RoleRepositoryInterface::class => RoleRepository::class,
+        PermissionRepositoryInterface::class => PermissionRepository::class,
     ];
 
     /**
