@@ -25,6 +25,11 @@ class SubCategoryRepository extends BaseRepository implements SubCategoryReposit
         return SubCategory::where('category_id', $categoryId)->get();
     }
 
+    public function findByIdAndSlug(int $id, string $slug): ?SubCategory
+    {
+        return SubCategory::where('id', $id)->where('subCategory_slug', $slug)->first();
+    }
+
     public function createWithSlug(array $data): SubCategory
     {
         $data['subCategory_slug'] = $this->generateSlug($data['subCategory_name']);

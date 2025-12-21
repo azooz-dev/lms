@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Helpers\FlashNotification;
@@ -8,8 +10,9 @@ use App\Http\Requests\Admin\UpdateAdminRequest;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\Instructor\RegisterInstructorRequest;
 use App\Http\Requests\ProfileUpdateRequest;
-use App\Models\Course;
+use App\Services\CourseService;
 use App\Services\DashboardService;
+use App\Services\RoleService;
 use App\Services\UserService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -17,13 +20,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use Spatie\Permission\Models\Role;
 
 class AdminController extends Controller
 {
     public function __construct(
         private readonly DashboardService $dashboardService,
-        private readonly UserService $userService
+        private readonly UserService $userService,
+        private readonly CourseService $courseService,
+        private readonly RoleService $roleService
     ) {}
 
     /**
@@ -94,7 +98,7 @@ class AdminController extends Controller
             );
 
             return redirect()->back()->with(FlashNotification::success('Admin profile updated successfully.'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->back()->with(FlashNotification::error('Something went wrong. Please try again.'));
         }
     }
@@ -132,7 +136,7 @@ class AdminController extends Controller
      */
     public function getThemePreference(): JsonResponse
     {
-        $theme = session('theme', 'light'); // Default to 'light' if no theme is set
+        $theme = session('theme', 'light');
 
         return response()->json(['theme' => $theme]);
     }
@@ -146,8 +150,6 @@ class AdminController extends Controller
 
     /**
      * Update instructor status
-     *
-     * @param  string  $id  Instructor ID
      */
     public function update_instructor_status(string $id): JsonResponse
     {
@@ -156,7 +158,7 @@ class AdminController extends Controller
             $this->userService->toggleUserStatus($instructor);
 
             return response()->json(['success' => true]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -168,8 +170,6 @@ class AdminController extends Controller
 
     /**
      * Register a new instructor
-     *
-     * @param  RegisterInstructorRequest  $request  The validated request object
      */
     public function instructor_register(RegisterInstructorRequest $request): RedirectResponse
     {
@@ -182,49 +182,36 @@ class AdminController extends Controller
             return redirect()
                 ->route('instructor.login')
                 ->with(FlashNotification::success('Instructor registration successful. Please login to continue.'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->back()->with(FlashNotification::error('Something went wrong. Please try again.'));
         }
     }
 
-    public function all_courses()
+    public function all_courses(): View
     {
-        $courses = Course::latest()->get();
+        $courses = $this->courseService->getAllCourses();
 
         return view('admin.backend.course.all_courses', compact('courses'));
     }
 
     /**
      * Toggle the course status
-     *
-     * @param  string  $id  Course ID
      */
     public function update_course_status(string $id): JsonResponse
     {
         try {
-            // Find the course
-            $course = Course::findOrFail($id);
+            $course = $this->courseService->findById((int) $id);
+            $this->courseService->toggleCourseStatus($course);
 
-            // Toggle the course status
-            if ($course->status == '1') {
-                $course->status = '0';
-            } else {
-                $course->status = '1';
-            }
-
-            // Save the changes
-            $course->save();
-
-            // Return a success response
             return response()->json(['success' => true]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-    public function course_details(string $id)
+    public function course_details(string $id): View
     {
-        $course = Course::find($id);
+        $course = $this->courseService->findById((int) $id);
 
         return view('admin.backend.course.course_details', compact('course'));
     }
@@ -238,7 +225,7 @@ class AdminController extends Controller
 
     public function add_admins(): View
     {
-        $roles = Role::all();
+        $roles = $this->roleService->getAllRoles();
 
         return view('admin.backend.pages.admin.add_admins', compact('roles'));
     }
@@ -259,7 +246,7 @@ class AdminController extends Controller
     public function edit_admin(string $id): View
     {
         $admin = $this->userService->getUserById((int) $id);
-        $roles = Role::all();
+        $roles = $this->roleService->getAllRoles();
 
         return view('admin.backend.pages.admin.edit_admin', compact('admin', 'roles'));
     }

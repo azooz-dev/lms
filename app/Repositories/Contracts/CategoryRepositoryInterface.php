@@ -11,6 +11,10 @@ interface CategoryRepositoryInterface extends RepositoryInterface
 {
     public function getAllLatest(): Collection;
 
+    public function getAllOrdered(string $column, string $direction = 'asc'): Collection;
+
+    public function findByIdAndSlug(int $id, string $slug): ?Category;
+
     public function hasSubCategories(Category $category): bool;
 
     public function createWithSlug(array $data): Category;

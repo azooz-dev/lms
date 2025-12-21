@@ -20,6 +20,38 @@ class CourseRepository extends BaseRepository implements CourseRepositoryInterfa
         return Course::where('instructor_id', $instructorId)->get();
     }
 
+    public function getAllLatest(): Collection
+    {
+        return Course::latest()->get();
+    }
+
+    public function getActiveCoursesLatest(int $limit): Collection
+    {
+        return Course::where('status', '1')->latest()->limit($limit)->get();
+    }
+
+    public function getFeaturedCourses(int $limit): Collection
+    {
+        return Course::where('featured', '1')
+            ->where('status', '1')
+            ->latest()
+            ->limit($limit)
+            ->get();
+    }
+
+    public function findByIdAndSlug(int $id, string $slug): ?Course
+    {
+        return Course::where('id', $id)->where('slug', $slug)->first();
+    }
+
+    public function toggleStatus(Course $course): Course
+    {
+        $course->status = $course->status === '1' ? '0' : '1';
+        $course->save();
+
+        return $course;
+    }
+
     public function createWithSlug(array $data): Course
     {
         $data['slug'] = $this->generateSlug($data['name']);

@@ -118,6 +118,29 @@ class UserService
     }
 
     /**
+     * Update instructor profile with optional photo
+     */
+    public function updateInstructorProfile(User $instructor, array $data, ?UploadedFile $photo = null): User
+    {
+        if ($photo) {
+            // Delete old photo if exists
+            if (! empty($instructor->photo)) {
+                $this->fileUploadService->deleteFromPublicStorage('upload/instructor_images', $instructor->photo);
+            }
+
+            // Upload new photo
+            $data['photo'] = $this->fileUploadService->generateTimestampPrefixedFilename($photo);
+            $photo->storeAs('public/upload/instructor_images', $data['photo']);
+        } else {
+            unset($data['photo']);
+        }
+
+        $instructor->update($data);
+
+        return $instructor;
+    }
+
+    /**
      * Update admin profile with optional photo
      */
     public function updateAdminProfile(User $admin, array $data, ?UploadedFile $photo = null): User
@@ -162,6 +185,14 @@ class UserService
     public function changeEmail(User $user, string $newEmail): void
     {
         $user->update(['email' => $newEmail]);
+    }
+
+    /**
+     * Get all users
+     */
+    public function getAllUsers(): Collection
+    {
+        return $this->userRepository->getAllUsers();
     }
 
     /**

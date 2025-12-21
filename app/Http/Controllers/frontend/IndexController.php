@@ -1,46 +1,47 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\frontend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\SubCategory;
-use App\Models\User;
-use App\Models\Wish_list;
-
-// use Illuminate\Http\Request;
+use App\Services\HomeService;
+use Illuminate\View\View;
 
 class IndexController extends Controller
 {
-    public function course_details(string $id, string $slug)
+    public function __construct(
+        private readonly HomeService $homeService
+    ) {}
+
+    public function course_details(string $id, string $slug): View
     {
-        $course = Course::where('id', $id)->where('slug', $slug)->first();
-        $categories = Category::orderBy('category_name', 'asc')->get();
+        $course = $this->homeService->getCourseByIdAndSlug((int) $id, $slug);
+        $categories = $this->homeService->getCategoriesOrdered();
 
         return view('frontend.course.course_details', compact('course', 'categories'));
     }
 
-    public function category_courses(string $id, string $slug)
+    public function category_courses(string $id, string $slug): View
     {
-        $category = Category::where('id', $id)->where('category_slug', $slug)->first();
-        $categories = Category::orderBy('category_name', 'asc')->get();
+        $category = $this->homeService->getCategoryByIdAndSlug((int) $id, $slug);
+        $categories = $this->homeService->getCategoriesOrdered();
 
         return view('frontend.category.category_courses', compact('category', 'categories'));
     }
 
-    public function subCategory_courses(string $id, string $slug)
+    public function subCategory_courses(string $id, string $slug): View
     {
-        $subCategory = SubCategory::where('id', $id)->where('subCategory_slug', $slug)->first();
-        $categories = Category::orderBy('category_name', 'asc')->get();
-        $wishLists = Wish_list::all();
+        $subCategory = $this->homeService->getSubCategoryByIdAndSlug((int) $id, $slug);
+        $categories = $this->homeService->getCategoriesOrdered();
+        $wishLists = $this->homeService->getAllWishLists();
 
         return view('frontend.category.subCategory_courses', compact('subCategory', 'categories', 'wishLists'));
     }
 
-    public function instructor_details(string $id)
+    public function instructor_details(string $id): View
     {
-        $instructor = User::find($id);
+        $instructor = $this->homeService->getInstructorById((int) $id);
 
         return view('frontend.instructor.instructor_details', compact('instructor'));
     }

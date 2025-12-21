@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\backend;
 
 use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
-use App\Models\Course;
-use App\Models\Order;
+use App\Services\CourseService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +17,8 @@ use Symfony\Component\HttpFoundation\Response;
 class OrderController extends Controller
 {
     public function __construct(
-        private readonly OrderService $orderService
+        private readonly OrderService $orderService,
+        private readonly CourseService $courseService
     ) {}
 
     public function pending_order(): View
@@ -35,8 +37,6 @@ class OrderController extends Controller
 
     /**
      * Update order status to confirm
-     *
-     * @param  string  $id  Payment ID
      */
     public function update_order_status(string $id): RedirectResponse
     {
@@ -71,8 +71,6 @@ class OrderController extends Controller
 
     /**
      * Download the invoice for the given payment
-     *
-     * @param  string  $id  Payment ID
      */
     public function instructor_invoice_download(string $id): Response
     {
@@ -91,7 +89,7 @@ class OrderController extends Controller
 
     public function my_course_details(string $id): View
     {
-        $course = Course::find($id);
+        $course = $this->courseService->findById((int) $id);
 
         return view('frontend.course.course_view', compact('course'));
     }
@@ -107,7 +105,7 @@ class OrderController extends Controller
 
     public function delete_my_course(string $id): RedirectResponse
     {
-        $order = Order::find($id);
+        $order = $this->orderService->findOrderById((int) $id);
         $this->orderService->hideOrderFromUser($order);
 
         return redirect()->back();

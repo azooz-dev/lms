@@ -1,35 +1,37 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\frontend;
 
 use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cart\ApplyCouponRequest;
 use App\Http\Requests\Cart\ProcessPaymentRequest;
-use App\Models\Course;
 use App\Services\CartService;
 use App\Services\CheckoutService;
 use App\Services\CouponService;
+use App\Services\CourseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class CartController extends Controller
 {
     public function __construct(
         private readonly CartService $cartService,
         private readonly CouponService $couponService,
-        private readonly CheckoutService $checkoutService
+        private readonly CheckoutService $checkoutService,
+        private readonly CourseService $courseService
     ) {}
 
     /**
      * Add a course to the cart
-     *
-     * @param  string  $id  The course id
      */
     public function store_cart(string $id): JsonResponse
     {
-        $course = Course::find($id);
+        $course = $this->courseService->findById((int) $id);
         $result = $this->cartService->addCourse($course);
 
         if ($result['success']) {
@@ -49,8 +51,6 @@ class CartController extends Controller
 
     /**
      * Remove a course from the mini cart
-     *
-     * @param  string  $id  The row id
      */
     public function mini_cart_delete(string $id): JsonResponse
     {
@@ -59,7 +59,7 @@ class CartController extends Controller
         return response()->json(['success' => 'The course has been removed from your cart.'], 200);
     }
 
-    public function show_cart()
+    public function show_cart(): View
     {
         return view('frontend.cart.my_cart');
     }
@@ -78,8 +78,6 @@ class CartController extends Controller
 
     /**
      * Apply a coupon to the cart.
-     *
-     * @param  ApplyCouponRequest  $request  The validated request object containing the coupon name.
      */
     public function apply_coupon(ApplyCouponRequest $request): JsonResponse
     {
@@ -136,10 +134,8 @@ class CartController extends Controller
 
     /**
      * Show the checkout view
-     *
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    public function checkout()
+    public function checkout(): RedirectResponse|View
     {
         if (! Auth::check()) {
             return redirect()->to('/login')->with(FlashNotification::error('Please login first.'));
@@ -156,8 +152,6 @@ class CartController extends Controller
 
     /**
      * Process payment for courses in the cart
-     *
-     * @param  ProcessPaymentRequest  $request  The validated request object containing the user's payment details
      */
     public function payment_process(ProcessPaymentRequest $request): RedirectResponse
     {
@@ -178,15 +172,12 @@ class CartController extends Controller
 
     /**
      * Add a course to the cart (buy now)
-     *
-     * @param  string  $id  The course id
      */
     public function buy_course(string $id): JsonResponse
     {
-        $course = Course::find($id);
+        $course = $this->courseService->findById((int) $id);
         $result = $this->cartService->addCourse($course);
 
-        // For buy_course, we always return success even if already in cart
         return response()->json(['success' => $result['message']], 200);
     }
 }

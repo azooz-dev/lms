@@ -22,6 +22,11 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
         return User::where('role', $role)->get();
     }
 
+    public function getAllUsers(): Collection
+    {
+        return User::where('role', 'user')->get();
+    }
+
     public function countByRole(string $role): int
     {
         return User::where('role', $role)->count();

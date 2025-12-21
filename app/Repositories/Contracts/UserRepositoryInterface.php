@@ -12,6 +12,8 @@ interface UserRepositoryInterface extends RepositoryInterface
 {
     public function getByRole(string $role): Collection;
 
+    public function getAllUsers(): Collection;
+
     public function countByRole(string $role): int;
 
     public function countByRoleInDateRange(string $role, DateTimeInterface $start, DateTimeInterface $end): int;
