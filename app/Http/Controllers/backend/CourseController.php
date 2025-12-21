@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\backend;
 
+use App\Actions\Course\CreateCourseAction;
+use App\Actions\Course\DeleteCourseAction;
+use App\Actions\Course\UpdateCourseAction;
 use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Course\StoreCourseRequest;
@@ -20,8 +23,12 @@ use Illuminate\Http\Request;
 class CourseController extends Controller
 {
     public function __construct(
-        private readonly CourseService $courseService
+        private readonly CourseService $courseService,
+        private readonly CreateCourseAction $createCourseAction,
+        private readonly UpdateCourseAction $updateCourseAction,
+        private readonly DeleteCourseAction $deleteCourseAction
     ) {}
+
     public function all_courses_by_instructor(string $id)
     {
         $courses = Course::where('instructor_id', $id)->orderBy('id', 'desc')->get();
@@ -66,7 +73,7 @@ class CourseController extends Controller
     public function store_course(StoreCourseRequest $request): RedirectResponse
     {
         try {
-            $this->courseService->createCourse(
+            $this->createCourseAction->handle(
                 $request->validated(),
                 $request->file('image'),
                 $request->file('video_link'),
@@ -108,7 +115,7 @@ class CourseController extends Controller
         $course = Course::find($id);
 
         try {
-            $this->courseService->updateCourse(
+            $this->updateCourseAction->handle(
                 $course,
                 $request->validated(),
                 $request->file('image')
@@ -162,7 +169,7 @@ class CourseController extends Controller
         $course = Course::find($id);
 
         try {
-            $this->courseService->deleteCourse($course);
+            $this->deleteCourseAction->handle($course);
 
             return redirect()
                 ->route('instructor.all_courses', auth()->id())
