@@ -41,4 +41,3 @@ Route::middleware(['auth', 'roles:user'])->group(function () {
         Route::get('/question/replies/{id}', 'question_replies')->name('question_replies');
     });
 });
-

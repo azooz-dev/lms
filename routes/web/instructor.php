@@ -94,4 +94,3 @@ Route::middleware(['auth', 'roles:instructor'])
             Route::get('/all/reviews/{id}', 'instructor_reviews')->name('instructor.reviews');
         });
     });
-

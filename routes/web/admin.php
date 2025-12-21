@@ -184,4 +184,3 @@ Route::middleware(['auth', 'roles:admin'])
                 Route::delete('/destroy/role/permissions/{id}', 'delete_role_permissions')->name('admin.role_permissions_destroy');
             });
     });
-

@@ -78,4 +78,3 @@ Route::controller(BlogController::class)->group(function () {
     Route::get('/blog/category/details/{id}', 'blog_category_details')->name('blog_category_details');
     Route::get('/all/blog', 'all_blog')->name('blogs');
 });
-
