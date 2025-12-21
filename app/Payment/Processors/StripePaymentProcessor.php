@@ -69,4 +69,3 @@ class StripePaymentProcessor implements PaymentProcessorInterface
         return 'stripe';
     }
 }
-

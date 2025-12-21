@@ -15,4 +15,3 @@ class PaymentData
         public readonly array $metadata = []
     ) {}
 }
-

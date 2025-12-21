@@ -19,4 +19,3 @@ class ClearCheckoutSession
         return $context;
     }
 }
-

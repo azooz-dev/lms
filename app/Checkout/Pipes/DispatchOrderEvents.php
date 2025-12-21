@@ -24,4 +24,3 @@ class DispatchOrderEvents
         return $context;
     }
 }
-

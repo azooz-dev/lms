@@ -40,4 +40,3 @@ class CashPaymentProcessor implements PaymentProcessorInterface
         return 'cash';
     }
 }
-

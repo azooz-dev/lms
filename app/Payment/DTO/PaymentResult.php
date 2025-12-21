@@ -29,4 +29,3 @@ class PaymentResult
         return new self(false, null, $message);
     }
 }
-

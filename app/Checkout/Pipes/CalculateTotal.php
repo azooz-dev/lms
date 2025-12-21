@@ -23,4 +23,3 @@ class CalculateTotal
         return $context;
     }
 }
-

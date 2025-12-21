@@ -80,4 +80,3 @@ class CheckoutContext
         return $this->successMessage ?: 'Payment successful.';
     }
 }
-

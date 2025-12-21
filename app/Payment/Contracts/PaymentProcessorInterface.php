@@ -24,4 +24,3 @@ interface PaymentProcessorInterface
      */
     public function getName(): string;
 }
-
