@@ -1,38 +1,42 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\backend;
 
 use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubCategory\StoreSubCategoryRequest;
 use App\Http\Requests\SubCategory\UpdateSubCategoryRequest;
-use App\Models\Category;
-use App\Models\SubCategory;
+use App\Services\SubCategoryService;
 use Exception;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class SubCategoryController extends Controller
 {
-    public function all_subCategories()
+    public function __construct(
+        private readonly SubCategoryService $subCategoryService
+    ) {}
+
+    public function all_subCategories(): View
     {
-        $subCategories = SubCategory::latest()->get();
+        $subCategories = $this->subCategoryService->getAllSubCategories();
 
         return view('admin.backend.subCategory.all_subCategories', compact('subCategories'));
     }
 
-    public function add_subCategory()
+    public function add_subCategory(): View
     {
-        $categories = Category::all();
+        $categories = $this->subCategoryService->getAllCategories();
 
         return view('admin.backend.subCategory.add_subCategory', compact('categories'));
     }
 
-    public function store_subCategory(StoreSubCategoryRequest $request)
+    public function store_subCategory(StoreSubCategoryRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-        $data['subCategory_slug'] = strtolower(str_replace(' ', '-', $data['subCategory_name']));
-
         try {
-            SubCategory::create($data);
+            $this->subCategoryService->createSubCategory($request->validated());
 
             return redirect()
                 ->route('admin.all_subCategories')
@@ -44,21 +48,19 @@ class SubCategoryController extends Controller
         }
     }
 
-    public function edit_subCategory(string $id)
+    public function edit_subCategory(string $id): View
     {
-        $subCategory = SubCategory::find($id);
-        $categories = Category::all();
+        $subCategory = $this->subCategoryService->findById((int) $id);
+        $categories = $this->subCategoryService->getAllCategories();
 
         return view('admin.backend.subCategory.edit_subCategory', compact('subCategory', 'categories'));
     }
 
-    public function update_subCategory(UpdateSubCategoryRequest $request, string $id)
+    public function update_subCategory(UpdateSubCategoryRequest $request, string $id): RedirectResponse
     {
-        $data = $request->validated();
-        $data['subCategory_slug'] = strtolower(str_replace(' ', '-', $data['subCategory_name']));
-
         try {
-            SubCategory::find($id)->update($data);
+            $subCategory = $this->subCategoryService->findById((int) $id);
+            $this->subCategoryService->updateSubCategory($subCategory, $request->validated());
 
             return redirect()
                 ->route('admin.all_subCategories')
@@ -70,10 +72,11 @@ class SubCategoryController extends Controller
         }
     }
 
-    public function destroy_subCategory(string $id)
+    public function destroy_subCategory(string $id): RedirectResponse
     {
         try {
-            SubCategory::find($id)->delete();
+            $subCategory = $this->subCategoryService->findById((int) $id);
+            $this->subCategoryService->deleteSubCategory($subCategory);
 
             return redirect()
                 ->back()
