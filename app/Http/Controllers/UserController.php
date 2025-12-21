@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\User\ChangePasswordAction;
+use App\Actions\User\UpdateUserProfileAction;
 use App\Helpers\FlashNotification;
 use App\Http\Requests\ChangeEmailRequest;
 use App\Http\Requests\ChangePasswordRequest;
@@ -22,7 +24,9 @@ use Illuminate\View\View;
 class UserController extends Controller
 {
     public function __construct(
-        private readonly UserService $userService
+        private readonly UserService $userService,
+        private readonly UpdateUserProfileAction $updateUserProfileAction,
+        private readonly ChangePasswordAction $changePasswordAction
     ) {}
     /**
      * Display the frontend index page
@@ -125,7 +129,7 @@ class UserController extends Controller
     {
         try {
             $user = $this->userService->getUserById((int) $id);
-            $this->userService->updateProfile(
+            $this->updateUserProfileAction->handle(
                 $user,
                 $request->validated(),
                 $request->file('photo')
@@ -141,17 +145,17 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
-        if (! $this->userService->verifyOldPassword($user, $request->old_password)) {
-            return redirect()->back()->with(FlashNotification::error('The old password does not match.'));
+        $result = $this->changePasswordAction->handle(
+            $user,
+            $request->old_password,
+            $request->new_password
+        );
+
+        if ($result['success']) {
+            return redirect()->back()->with(FlashNotification::success($result['message']));
         }
 
-        try {
-            $this->userService->changePassword($user, $request->new_password);
-
-            return redirect()->back()->with(FlashNotification::success('The Password changed successfully.'));
-        } catch (Exception $e) {
-            return redirect()->back()->with(FlashNotification::error('Something went wrong! Please try again.'));
-        }
+        return redirect()->back()->with(FlashNotification::error($result['message']));
     }
 
     public function change_email(ChangeEmailRequest $request, string $id): RedirectResponse

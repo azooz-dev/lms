@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\frontend;
 
+use App\Actions\Checkout\ProcessCheckoutAction;
 use App\Helpers\FlashNotification;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cart\ApplyCouponRequest;
 use App\Http\Requests\Cart\ProcessPaymentRequest;
 use App\Models\Course;
 use App\Services\CartService;
-use App\Services\CheckoutService;
 use App\Services\CouponService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +19,7 @@ class CartController extends Controller
     public function __construct(
         private readonly CartService $cartService,
         private readonly CouponService $couponService,
-        private readonly CheckoutService $checkoutService
+        private readonly ProcessCheckoutAction $processCheckoutAction
     ) {}
 
     /**
@@ -164,7 +164,7 @@ class CartController extends Controller
     {
         $isCreditCard = $request->cash_delivery === 'credit_card';
 
-        $result = $this->checkoutService->processCheckout(
+        $result = $this->processCheckoutAction->handle(
             $request->all(),
             Auth::id(),
             $isCreditCard

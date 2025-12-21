@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\User\ChangePasswordAction;
+use App\Actions\User\CreateAdminAction;
+use App\Actions\User\RegisterInstructorAction;
+use App\Actions\User\UpdateUserProfileAction;
 use App\Helpers\FlashNotification;
 use App\Http\Requests\Admin\StoreAdminRequest;
 use App\Http\Requests\Admin\UpdateAdminRequest;
@@ -24,7 +28,11 @@ class AdminController extends Controller
 {
     public function __construct(
         private readonly DashboardService $dashboardService,
-        private readonly UserService $userService
+        private readonly UserService $userService,
+        private readonly RegisterInstructorAction $registerInstructorAction,
+        private readonly CreateAdminAction $createAdminAction,
+        private readonly UpdateUserProfileAction $updateUserProfileAction,
+        private readonly ChangePasswordAction $changePasswordAction
     ) {}
 
     /**
@@ -88,7 +96,7 @@ class AdminController extends Controller
     {
         try {
             $admin = $this->userService->getUserById((int) $id);
-            $this->userService->updateAdminProfile(
+            $this->updateUserProfileAction->handleAdmin(
                 $admin,
                 $request->validated(),
                 $request->file('photo')
@@ -112,17 +120,17 @@ class AdminController extends Controller
     {
         $user = Auth::user();
 
-        if (! $this->userService->verifyOldPassword($user, $request->old_password)) {
-            return back()->with('error', 'The old password does not match.');
+        $result = $this->changePasswordAction->handle(
+            $user,
+            $request->old_password,
+            $request->new_password
+        );
+
+        if ($result['success']) {
+            return back()->with(FlashNotification::success($result['message']));
         }
 
-        try {
-            $this->userService->changePassword($user, $request->new_password);
-
-            return back()->with(FlashNotification::success('The Password changed successfully.'));
-        } catch (\Exception $e) {
-            return back()->with(FlashNotification::error('Something went wrong! Please try again.'));
-        }
+        return back()->with(FlashNotification::error($result['message']));
     }
 
     public function updateTheme(Request $request): JsonResponse
@@ -179,7 +187,7 @@ class AdminController extends Controller
     public function instructor_register(RegisterInstructorRequest $request): RedirectResponse
     {
         try {
-            $this->userService->registerInstructor(
+            $this->registerInstructorAction->handle(
                 $request->validated(),
                 $request->file('photo')
             );
@@ -251,7 +259,7 @@ class AdminController extends Controller
     public function store_admin(StoreAdminRequest $request): RedirectResponse
     {
         try {
-            $this->userService->createAdmin($request->validated(), $request->role);
+            $this->createAdminAction->handle($request->validated(), $request->role);
 
             return redirect()
                 ->route('admin.all_admins')
