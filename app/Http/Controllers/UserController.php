@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\User\ChangePasswordAction;
-use App\Actions\User\UpdateUserProfileAction;
 use App\Helpers\FlashNotification;
 use App\Http\Requests\ChangeEmailRequest;
 use App\Http\Requests\ChangePasswordRequest;
@@ -12,7 +10,6 @@ use App\Models\Category;
 use App\Models\Course;
 use App\Models\Post;
 use App\Models\Review;
-use App\Models\User;
 use App\Models\Wish_list;
 use App\Services\UserService;
 use Exception;
@@ -24,9 +21,7 @@ use Illuminate\View\View;
 class UserController extends Controller
 {
     public function __construct(
-        private readonly UserService $userService,
-        private readonly UpdateUserProfileAction $updateUserProfileAction,
-        private readonly ChangePasswordAction $changePasswordAction
+        private readonly UserService $userService
     ) {}
 
     /**
@@ -130,7 +125,7 @@ class UserController extends Controller
     {
         try {
             $user = $this->userService->getUserById((int) $id);
-            $this->updateUserProfileAction->handle(
+            $this->userService->updateProfile(
                 $user,
                 $request->validated(),
                 $request->file('photo')
@@ -146,17 +141,13 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
-        $result = $this->changePasswordAction->handle(
-            $user,
-            $request->old_password,
-            $request->new_password
-        );
-
-        if ($result['success']) {
-            return redirect()->back()->with(FlashNotification::success($result['message']));
+        if (! $this->userService->verifyOldPassword($user, $request->old_password)) {
+            return redirect()->back()->with(FlashNotification::error('Old password does not match.'));
         }
 
-        return redirect()->back()->with(FlashNotification::error($result['message']));
+        $this->userService->changePassword($user, $request->new_password);
+
+        return redirect()->back()->with(FlashNotification::success('Password changed successfully.'));
     }
 
     public function change_email(ChangeEmailRequest $request, string $id): RedirectResponse
