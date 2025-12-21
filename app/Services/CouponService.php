@@ -6,13 +6,60 @@ namespace App\Services;
 
 use App\Models\Coupon;
 use App\Repositories\Contracts\CouponRepositoryInterface;
+use App\Repositories\Contracts\CourseRepositoryInterface;
 use Gloudemans\Shoppingcart\Facades\Cart;
+use Illuminate\Database\Eloquent\Collection;
 
 class CouponService
 {
     public function __construct(
-        private readonly CouponRepositoryInterface $couponRepository
+        private readonly CouponRepositoryInterface $couponRepository,
+        private readonly CourseRepositoryInterface $courseRepository
     ) {}
+
+    // Admin Coupon CRUD
+    public function getAllCoupons(): Collection
+    {
+        return $this->couponRepository->getAllLatest();
+    }
+
+    public function findById(int $id): ?Coupon
+    {
+        return $this->couponRepository->find($id);
+    }
+
+    public function createCoupon(array $data): Coupon
+    {
+        return $this->couponRepository->createCoupon($data);
+    }
+
+    public function updateCoupon(Coupon $coupon, array $data): Coupon
+    {
+        return $this->couponRepository->updateCoupon($coupon, $data);
+    }
+
+    public function deleteCoupon(Coupon $coupon): bool
+    {
+        return $this->couponRepository->delete($coupon);
+    }
+
+    // Instructor Coupon Operations
+    public function getInstructorCoupons(int $instructorId): Collection
+    {
+        return $this->couponRepository->getByInstructorId($instructorId);
+    }
+
+    public function getInstructorCourses(int $instructorId): Collection
+    {
+        return $this->courseRepository->getByInstructorId($instructorId);
+    }
+
+    public function createInstructorCoupon(array $data, int $instructorId): Coupon
+    {
+        $data['instructor_id'] = $instructorId;
+
+        return $this->couponRepository->createCoupon($data);
+    }
 
     /**
      * Validate and retrieve a coupon by name
