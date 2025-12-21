@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Actions\User\ChangePasswordAction;
-use App\Actions\User\CreateAdminAction;
-use App\Actions\User\RegisterInstructorAction;
-use App\Actions\User\UpdateUserProfileAction;
+use App\Events\InstructorRegistered;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Http\UploadedFile;
@@ -18,19 +15,18 @@ class UserService
 {
     public function __construct(
         private readonly FileUploadService $fileUploadService,
-        private readonly UserRepositoryInterface $userRepository,
-        private readonly RegisterInstructorAction $registerInstructorAction,
-        private readonly CreateAdminAction $createAdminAction,
-        private readonly UpdateUserProfileAction $updateUserProfileAction,
-        private readonly ChangePasswordAction $changePasswordAction
+        private readonly UserRepositoryInterface $userRepository
     ) {}
 
     /**
-     * Create a new admin user
+     * Create a new admin user with role assignment
      */
     public function createAdmin(array $data, string $roleName): User
     {
-        return $this->createAdminAction->handle($data, $roleName);
+        $admin = $this->userRepository->createWithRole($data, 'admin');
+        $admin->assignRole($roleName);
+
+        return $admin;
     }
 
     /**
@@ -64,7 +60,29 @@ class UserService
      */
     public function registerInstructor(array $data, ?UploadedFile $photo = null): User
     {
-        return $this->registerInstructorAction->handle($data, $photo);
+        $photoName = null;
+
+        if ($photo) {
+            $photoName = $this->fileUploadService->uploadFile($photo, 'upload/instructor_images');
+        }
+
+        $instructor = User::create([
+            'name' => $data['name'],
+            'username' => $data['username'],
+            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'photo' => $photoName,
+            'address' => $data['address'],
+            'password' => Hash::make($data['password']),
+            'role' => 'instructor',
+            'status' => '0',
+            'bio' => $data['bio'] ?? null,
+        ]);
+
+        // Dispatch event to send welcome email
+        InstructorRegistered::dispatch($instructor);
+
+        return $instructor;
     }
 
     /**
@@ -83,7 +101,20 @@ class UserService
      */
     public function updateProfile(User $user, array $data, ?UploadedFile $photo = null): User
     {
-        return $this->updateUserProfileAction->handle($user, $data, $photo);
+        if ($photo) {
+            // Delete old photo if exists
+            $this->deleteUserPhoto($user);
+
+            // Upload new photo
+            $data['photo'] = $this->fileUploadService->generateTimestampPrefixedFilename($photo);
+            $photo->storeAs('public/upload/users_images', $data['photo']);
+        } else {
+            unset($data['photo']);
+        }
+
+        $user->update($data);
+
+        return $user;
     }
 
     /**
@@ -91,7 +122,22 @@ class UserService
      */
     public function updateAdminProfile(User $admin, array $data, ?UploadedFile $photo = null): User
     {
-        return $this->updateUserProfileAction->handleAdmin($admin, $data, $photo);
+        if ($photo) {
+            // Delete old photo if exists
+            if (! empty($admin->photo)) {
+                $this->fileUploadService->deleteFromPublicStorage('upload/admin_images', $admin->photo);
+            }
+
+            // Upload new photo
+            $data['photo'] = $this->fileUploadService->generateTimestampPrefixedFilename($photo);
+            $photo->storeAs('public/upload/admin_images', $data['photo']);
+        } else {
+            unset($data['photo']);
+        }
+
+        $admin->update($data);
+
+        return $admin;
     }
 
     /**
