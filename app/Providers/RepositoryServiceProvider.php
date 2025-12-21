@@ -4,21 +4,27 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Repositories\BlogCategoryRepository;
 use App\Repositories\CategoryRepository;
+use App\Repositories\Contracts\BlogCategoryRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\CouponRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\OrderRepositoryInterface;
 use App\Repositories\Contracts\PaymentRepositoryInterface;
+use App\Repositories\Contracts\PostRepositoryInterface;
 use App\Repositories\Contracts\ReviewRepositoryInterface;
 use App\Repositories\Contracts\SubCategoryRepositoryInterface;
+use App\Repositories\Contracts\TagRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\CouponRepository;
 use App\Repositories\CourseRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
+use App\Repositories\PostRepository;
 use App\Repositories\ReviewRepository;
 use App\Repositories\SubCategoryRepository;
+use App\Repositories\TagRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Support\ServiceProvider;
 
@@ -38,6 +44,9 @@ class RepositoryServiceProvider extends ServiceProvider
         CouponRepositoryInterface::class => CouponRepository::class,
         CategoryRepositoryInterface::class => CategoryRepository::class,
         SubCategoryRepositoryInterface::class => SubCategoryRepository::class,
+        BlogCategoryRepositoryInterface::class => BlogCategoryRepository::class,
+        PostRepositoryInterface::class => PostRepository::class,
+        TagRepositoryInterface::class => TagRepository::class,
     ];
 
     /**

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\backend;
 
 use App\Helpers\FlashNotification;
@@ -8,109 +10,78 @@ use App\Http\Requests\Blog\StoreBlogCategoryRequest;
 use App\Http\Requests\Blog\StorePostRequest;
 use App\Http\Requests\Blog\UpdateBlogCategoryRequest;
 use App\Http\Requests\Blog\UpdatePostRequest;
-use App\Models\BlogCategory;
-use App\Models\Post;
-use App\Models\Tag;
+use App\Services\BlogService;
 use Exception;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Drivers\Imagick\Driver;
-use Intervention\Image\ImageManager;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class BlogController extends Controller
 {
-    public function all_blog_category()
+    public function __construct(
+        private readonly BlogService $blogService
+    ) {}
+
+    public function all_blog_category(): View
     {
-        $categories = BlogCategory::latest()->get();
+        $categories = $this->blogService->getAllCategories();
 
         return view('admin.backend.blogCategory.all_blog_category', compact('categories'));
     }
 
-    public function store_blog_category(StoreBlogCategoryRequest $request)
+    public function store_blog_category(StoreBlogCategoryRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-        $data['category_slug'] = strtolower(str_replace(' ', '-', $data['category_name']));
-
-        BlogCategory::create($data);
+        $this->blogService->createCategory($request->validated());
 
         return redirect()->back()->with(FlashNotification::success('Blog Category Added Successfully.'));
     }
 
-    public function blog_category_edit(string $id)
+    public function blog_category_edit(string $id): JsonResponse
     {
-        $category = BlogCategory::find($id);
+        $category = $this->blogService->findCategoryById((int) $id);
 
         return response()->json(['category' => $category]);
     }
 
-    public function update_blog_category(UpdateBlogCategoryRequest $request, string $id)
+    public function update_blog_category(UpdateBlogCategoryRequest $request, string $id): RedirectResponse
     {
-        $data = $request->validated();
-        $data['category_slug'] = strtolower(str_replace(' ', '-', $data['category_name']));
-
-        BlogCategory::find($id)->update($data);
+        $category = $this->blogService->findCategoryById((int) $id);
+        $this->blogService->updateCategory($category, $request->validated());
 
         return redirect()->back()->with(FlashNotification::success('Blog Category Updated Successfully.'));
     }
 
-    public function delete_blog_category(string $id)
+    public function delete_blog_category(string $id): RedirectResponse
     {
-        BlogCategory::find($id)->delete();
+        $category = $this->blogService->findCategoryById((int) $id);
+        $this->blogService->deleteCategory($category);
 
         return redirect()->back()->with(FlashNotification::success('Blog Category Deleted Successfully.'));
     }
 
-    public function all_posts()
+    public function all_posts(): View
     {
-        $posts = Post::latest()->get();
+        $posts = $this->blogService->getAllPosts();
 
         return view('admin.backend.posts.all_posts', compact('posts'));
     }
 
-    public function add_posts()
+    public function add_posts(): View
     {
-        $categories = BlogCategory::latest()->get();
+        $categories = $this->blogService->getAllCategories();
 
         return view('admin.backend.posts.add_posts', compact('categories'));
     }
 
-    public function store_post(StorePostRequest $request, string $id)
+    public function store_post(StorePostRequest $request, string $id): RedirectResponse
     {
-        $data = $request->validated();
-
-        $data['slug'] = strtolower(str_replace(' ', '-', $data['title']));
-        $data['admin_id'] = $id;
-
         try {
-            $manager = new ImageManager(new Driver);
-            $data['image'] = hexdec(uniqid()).'.'.$request->file('image')->getClientOriginalExtension();
-            $path = $request->file('image')->getRealPath();
-
-            if (! file_exists($path) || ! is_readable($path)) {
-                throw new Exception('File not found or not readable.');
-            }
-
-            $img = $manager->read($request->file('image'))->resize(370, 247)->toJpeg(80);
-            $img->save('storage/upload/posts_images/'.$data['image']);
-
-            $post = Post::create($data);
-
-            if ($request->has('tag') && ! empty($request->tag)) {
-                $tags = $request->tag;
-                $words = explode(',', $tags);
-
-                foreach ($words as $word) {
-                    $tag = Tag::create([
-                        'name' => trim($word),
-                        'slug' => strtolower(str_replace(' ', '-', trim($word))),
-                    ]);
-
-                    DB::table('post_tag')->insert([
-                        'post_id' => $post->id,
-                        'tag_id' => $tag->id,
-                    ]);
-                }
-            }
+            $this->blogService->createPost(
+                $request->validated(),
+                $request->file('image'),
+                (int) $id,
+                $request->tag
+            );
 
             return redirect()
                 ->route('admin.all_posts')
@@ -122,69 +93,26 @@ class BlogController extends Controller
         }
     }
 
-    public function post_edit(string $id)
+    public function post_edit(string $id): View
     {
-        $post = Post::find($id);
-        $categories = BlogCategory::latest()->get();
-
-        $tags = implode(', ', $post->tags->pluck('name')->toArray());
+        $post = $this->blogService->findPostById((int) $id);
+        $categories = $this->blogService->getAllCategories();
+        $tags = $this->blogService->getPostTags($post);
 
         return view('admin.backend.posts.edit_post', compact('post', 'categories', 'tags'));
     }
 
-    /**
-     * Updates an existing blog post
-     *
-     * @param  UpdatePostRequest  $request  The validated request object
-     * @param  string  $id  The ID of the post
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function update_post(UpdatePostRequest $request, string $id)
+    public function update_post(UpdatePostRequest $request, string $id): RedirectResponse
     {
-        $post = Post::find($id);
-        $data = $request->validated();
-
         try {
-            // Process the image if new image is uploaded
-            if ($request->hasFile('image')) {
-                $manager = new ImageManager(new Driver);
+            $post = $this->blogService->findPostById((int) $id);
 
-                // Delete old image if exists
-                if (! empty($post->image) && Storage::exists('public/upload/posts_images/'.$post->image)) {
-                    Storage::delete('public/upload/posts_images/'.$post->image);
-                }
-
-                $data['image'] = hexdec(uniqid()).'.'.$request->file('image')->getClientOriginalExtension();
-                $img = $manager->read($request->file('image'))->resize(370, 247)->toJpeg(80);
-                $img->save('storage/upload/posts_images/'.$data['image']);
-            }
-
-            // Update the post data
-            $data['slug'] = strtolower(str_replace(' ', '-', $data['title']));
-            if ($request->filled('category_id')) {
-                $data['category_id'] = $request->category_id;
-            }
-
-            $post->update($data);
-
-            // Manage tags
-            $post->tags()->detach();
-
-            if ($request->has('tag') && ! empty($request->tag)) {
-                $words = explode(',', $request->tag);
-
-                foreach ($words as $word) {
-                    $tag = Tag::create([
-                        'name' => trim($word),
-                        'slug' => strtolower(str_replace(' ', '-', trim($word))),
-                    ]);
-
-                    DB::table('post_tag')->insert([
-                        'post_id' => $post->id,
-                        'tag_id' => $tag->id,
-                    ]);
-                }
-            }
+            $this->blogService->updatePost(
+                $post,
+                $request->validated(),
+                $request->file('image'),
+                $request->tag
+            );
 
             return redirect()
                 ->route('admin.all_posts')
@@ -196,39 +124,38 @@ class BlogController extends Controller
         }
     }
 
-    public function delete_post(string $id)
+    public function delete_post(string $id): RedirectResponse
     {
-        $post = Post::find($id);
-        $post->tags()->detach();
-        $post->delete();
+        $post = $this->blogService->findPostById((int) $id);
+        $this->blogService->deletePost($post);
 
         return back()->with(FlashNotification::success('Post Deleted Successfully.'));
     }
 
-    public function blog_details(string $slug)
+    public function blog_details(string $slug): View
     {
-        $post = Post::where('slug', $slug)->first();
-        $categories = BlogCategory::latest()->get();
-        $posts = Post::latest()->limit(3)->get();
+        $post = $this->blogService->findPostBySlug($slug);
+        $categories = $this->blogService->getAllCategories();
+        $posts = $this->blogService->getRecentPosts(3);
 
         return view('frontend.posts.blog_details', compact('post', 'categories', 'posts'));
     }
 
-    public function blog_category_details(string $id)
+    public function blog_category_details(string $id): View
     {
-        $category = BlogCategory::find($id);
-        $category_posts = Post::where('category_id', $id)->paginate(2);
-        $categories = BlogCategory::latest()->get();
-        $posts = Post::latest()->limit(3)->get();
+        $category = $this->blogService->findCategoryById((int) $id);
+        $category_posts = $this->blogService->getPostsByCategoryId((int) $id, 2);
+        $categories = $this->blogService->getAllCategories();
+        $posts = $this->blogService->getRecentPosts(3);
 
         return view('frontend.posts.blog_category_details', compact('category', 'categories', 'posts', 'category_posts'));
     }
 
-    public function all_blog()
+    public function all_blog(): View
     {
-        $posts = Post::latest()->paginate(2);
-        $categories = BlogCategory::latest()->get();
-        $recentPosts = Post::latest()->limit(3)->get();
+        $posts = $this->blogService->getPostsPaginated(2);
+        $categories = $this->blogService->getAllCategories();
+        $recentPosts = $this->blogService->getRecentPosts(3);
 
         return view('frontend.posts.all_posts', compact('posts', 'categories', 'recentPosts'));
     }
