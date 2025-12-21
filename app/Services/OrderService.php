@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Events\OrderConfirmed;
+use App\Actions\Order\ConfirmOrderAction;
+use App\Actions\Order\GenerateInvoiceAction;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Repositories\Contracts\OrderRepositoryInterface;
 use App\Repositories\Contracts\PaymentRepositoryInterface;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 
 class OrderService
 {
     public function __construct(
         private readonly OrderRepositoryInterface $orderRepository,
-        private readonly PaymentRepositoryInterface $paymentRepository
+        private readonly PaymentRepositoryInterface $paymentRepository,
+        private readonly ConfirmOrderAction $confirmOrderAction,
+        private readonly GenerateInvoiceAction $generateInvoiceAction
     ) {}
 
     /**
@@ -50,10 +51,7 @@ class OrderService
      */
     public function confirmOrder(Payment $payment): void
     {
-        $this->paymentRepository->confirm($payment);
-
-        // Dispatch event to handle notifications
-        OrderConfirmed::dispatch($payment);
+        $this->confirmOrderAction->handle($payment);
     }
 
     /**
@@ -97,40 +95,7 @@ class OrderService
      */
     public function generateInvoicePdf(Payment $payment): \Barryvdh\DomPDF\PDF
     {
-        // Ensure course images are available for PDF
-        $this->prepareCourseImagesForPdf($payment);
-
-        return Pdf::loadView('instructor.orders.invoice_order', compact('payment'))
-            ->setPaper('a4')
-            ->setOption([
-                'tempDir' => public_path(),
-                'chroot' => public_path(),
-            ]);
-    }
-
-    /**
-     * Copy course images to public path for PDF generation
-     */
-    private function prepareCourseImagesForPdf(Payment $payment): void
-    {
-        // Ensure the destination directory exists
-        $destDir = public_path('course/images');
-        if (! is_dir($destDir)) {
-            mkdir($destDir, 0755, true);
-        }
-
-        foreach ($payment->orders as $order) {
-            if (! $order->course || empty($order->course->image)) {
-                continue;
-            }
-
-            $destinationPath = public_path('course/images/'.$order->course->image);
-            $sourcePath = Storage::disk('public')->path('upload/course/images/'.$order->course->image);
-
-            if (! file_exists($destinationPath) && file_exists($sourcePath)) {
-                copy($sourcePath, $destinationPath);
-            }
-        }
+        return $this->generateInvoiceAction->handle($payment);
     }
 
     /**
