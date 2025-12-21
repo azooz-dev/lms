@@ -14,22 +14,28 @@ use App\Repositories\Contracts\OrderRepositoryInterface;
 use App\Repositories\Contracts\PaymentRepositoryInterface;
 use App\Repositories\Contracts\PermissionRepositoryInterface;
 use App\Repositories\Contracts\PostRepositoryInterface;
+use App\Repositories\Contracts\QuestionRepositoryInterface;
 use App\Repositories\Contracts\ReviewRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
+use App\Repositories\Contracts\SettingRepositoryInterface;
 use App\Repositories\Contracts\SubCategoryRepositoryInterface;
 use App\Repositories\Contracts\TagRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Repositories\Contracts\WishListRepositoryInterface;
 use App\Repositories\CouponRepository;
 use App\Repositories\CourseRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
 use App\Repositories\PermissionRepository;
 use App\Repositories\PostRepository;
+use App\Repositories\QuestionRepository;
 use App\Repositories\ReviewRepository;
 use App\Repositories\RoleRepository;
+use App\Repositories\SettingRepository;
 use App\Repositories\SubCategoryRepository;
 use App\Repositories\TagRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\WishListRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -53,6 +59,9 @@ class RepositoryServiceProvider extends ServiceProvider
         TagRepositoryInterface::class => TagRepository::class,
         RoleRepositoryInterface::class => RoleRepository::class,
         PermissionRepositoryInterface::class => PermissionRepository::class,
+        SettingRepositoryInterface::class => SettingRepository::class,
+        QuestionRepositoryInterface::class => QuestionRepository::class,
+        WishListRepositoryInterface::class => WishListRepository::class,
     ];
 
     /**
