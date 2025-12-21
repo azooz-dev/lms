@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\backend;
 
 use App\Exports\PermissionExport;
@@ -11,41 +13,36 @@ use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdatePermissionRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Imports\PermissionImport;
-use App\Models\User;
+use App\Services\RoleService;
 use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class RoleController extends Controller
 {
-    public function all_permissions()
+    public function __construct(
+        private readonly RoleService $roleService
+    ) {}
+
+    public function all_permissions(): View
     {
-        $permissions = Permission::latest()->get();
+        $permissions = $this->roleService->getAllPermissionsLatest();
 
         return view('admin.backend.pages.permissions.all_permissions', compact('permissions'));
     }
 
-    public function add_permission()
+    public function add_permission(): View
     {
         return view('admin.backend.pages.permissions.add_permission');
     }
 
-    /**
-     * Store a new permission in the database.
-     *
-     * @param  StorePermissionRequest  $request  The validated request object.
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function store_permission(StorePermissionRequest $request)
+    public function store_permission(StorePermissionRequest $request): RedirectResponse
     {
         try {
-            Permission::create([
-                'name' => $request->name,
-                'group_name' => $request->group_name,
-            ]);
+            $this->roleService->createPermission($request->validated());
 
             return redirect()
                 ->route('admin.all_permission')
@@ -57,25 +54,18 @@ class RoleController extends Controller
         }
     }
 
-    public function permission_edit(string $id)
+    public function permission_edit(string $id): View
     {
-        $permission = Permission::find($id);
+        $permission = $this->roleService->findPermissionById((int) $id);
 
         return view('admin.backend.pages.permissions.edit_permission', compact('permission'));
     }
 
-    /**
-     * Update a permission in the database.
-     *
-     * @param  UpdatePermissionRequest  $request  The validated request object.
-     * @param  string  $id  The ID of the permission to update.
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function update_permission(UpdatePermissionRequest $request, string $id)
+    public function update_permission(UpdatePermissionRequest $request, string $id): RedirectResponse
     {
         try {
-            $permission = Permission::find($id);
-            $permission->update($request->validated());
+            $permission = $this->roleService->findPermissionById((int) $id);
+            $this->roleService->updatePermission($permission, $request->validated());
 
             return redirect()
                 ->route('admin.all_permission')
@@ -87,10 +77,11 @@ class RoleController extends Controller
         }
     }
 
-    public function permission_delete(string $id)
+    public function permission_delete(string $id): RedirectResponse
     {
         try {
-            Permission::find($id)->delete();
+            $permission = $this->roleService->findPermissionById((int) $id);
+            $this->roleService->deletePermission($permission);
 
             return redirect()->back()->with(FlashNotification::success('Permission deleted successfully.'));
         } catch (Exception $e) {
@@ -98,17 +89,17 @@ class RoleController extends Controller
         }
     }
 
-    public function export_permission()
+    public function export_permission(): BinaryFileResponse
     {
         return Excel::download(new PermissionExport, 'permissions.xlsx');
     }
 
-    public function import_permission()
+    public function import_permission(): View
     {
         return view('admin.backend.pages.permissions.import_permission');
     }
 
-    public function import_permission_file(ImportPermissionRequest $request)
+    public function import_permission_file(ImportPermissionRequest $request): RedirectResponse
     {
         try {
             Excel::import(new PermissionImport, $request->file('excel_file'));
@@ -119,30 +110,22 @@ class RoleController extends Controller
         }
     }
 
-    public function all_roles()
+    public function all_roles(): View
     {
-        $roles = Role::latest()->get();
+        $roles = $this->roleService->getAllRolesLatest();
 
         return view('admin.backend.pages.roles.all_roles', compact('roles'));
     }
 
-    public function add_role()
+    public function add_role(): View
     {
         return view('admin.backend.pages.roles.add_role');
     }
 
-    /**
-     * Store a new role in the database.
-     *
-     * @param  StoreRoleRequest  $request  The validated request object.
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function store_role(StoreRoleRequest $request)
+    public function store_role(StoreRoleRequest $request): RedirectResponse
     {
         try {
-            Role::create([
-                'name' => $request->name,
-            ]);
+            $this->roleService->createRole($request->validated());
 
             return redirect()
                 ->route('admin.all_role')
@@ -154,25 +137,18 @@ class RoleController extends Controller
         }
     }
 
-    public function edit_role(string $id)
+    public function edit_role(string $id): View
     {
-        $role = Role::find($id);
+        $role = $this->roleService->findRoleById((int) $id);
 
         return view('admin.backend.pages.roles.edit_role', compact('role'));
     }
 
-    /**
-     * Update a role in the database.
-     *
-     * @param  UpdateRoleRequest  $request  The validated request object.
-     * @param  string  $id  The ID of the role to update.
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function update_role(UpdateRoleRequest $request, string $id)
+    public function update_role(UpdateRoleRequest $request, string $id): RedirectResponse
     {
         try {
-            $role = Role::find($id);
-            $role->update($request->validated());
+            $role = $this->roleService->findRoleById((int) $id);
+            $this->roleService->updateRole($role, $request->validated());
 
             return redirect()
                 ->route('admin.all_role')
@@ -184,10 +160,11 @@ class RoleController extends Controller
         }
     }
 
-    public function delete_role(string $id)
+    public function delete_role(string $id): RedirectResponse
     {
         try {
-            Role::find($id)->delete();
+            $role = $this->roleService->findRoleById((int) $id);
+            $this->roleService->deleteRole($role);
 
             return redirect()->back()->with(FlashNotification::success('Role deleted successfully.'));
         } catch (Exception $e) {
@@ -195,51 +172,49 @@ class RoleController extends Controller
         }
     }
 
-    public function all_role_permissions()
+    public function all_role_permissions(): View
     {
-        $roles = Role::all();
+        $roles = $this->roleService->getAllRoles();
 
         return view('admin.backend.pages.roleSetup.all_role_permission', compact('roles'));
     }
 
-    public function add_role_permissions()
+    public function add_role_permissions(): View
     {
-        $roles = Role::all();
-        $permissionGroups = User::get_permission_group_name();
-        $permissions = Permission::all();
+        $roles = $this->roleService->getAllRoles();
+        $permissionGroups = $this->roleService->getPermissionGroups();
+        $permissions = $this->roleService->getAllPermissions();
 
         return view('admin.backend.pages.roleSetup.add_role_permissions', compact('roles', 'permissionGroups', 'permissions'));
     }
 
-    public function store_role_permissions(Request $request)
+    public function store_role_permissions(Request $request): RedirectResponse
     {
-        foreach ($request->permission as $permission) {
-            DB::table('role_has_permissions')->insert([
-                'role_id' => $request->role_id,
-                'permission_id' => $permission,
-            ]);
-        }
+        $this->roleService->assignPermissionsToRole(
+            (int) $request->role_id,
+            $request->permission
+        );
 
         return redirect()
             ->route('admin.all_role_permissions')
             ->with(FlashNotification::success('Role permissions added successfully.'));
     }
 
-    public function edit_role_permissions(string $id)
+    public function edit_role_permissions(string $id): View
     {
-        $role = Role::find($id);
-        $permissionGroups = User::get_permission_group_name();
-        $permissions = Permission::all();
+        $role = $this->roleService->findRoleById((int) $id);
+        $permissionGroups = $this->roleService->getPermissionGroups();
+        $permissions = $this->roleService->getAllPermissions();
 
         return view('admin.backend.pages.roleSetup.edit_role_permissions', compact('role', 'permissionGroups', 'permissions'));
     }
 
-    public function update_role_permissions(Request $request, string $id)
+    public function update_role_permissions(Request $request, string $id): RedirectResponse
     {
-        $role = Role::find($id);
+        $role = $this->roleService->findRoleById((int) $id);
 
         if (! empty($request->permission)) {
-            $role->syncPermissions($request->permission);
+            $this->roleService->syncRolePermissions($role, $request->permission);
 
             return redirect()
                 ->route('admin.all_role_permissions')
@@ -249,11 +224,11 @@ class RoleController extends Controller
         return redirect()->back()->with(FlashNotification::error('Please select at least one permission.'));
     }
 
-    public function delete_role_permissions(string $id)
+    public function delete_role_permissions(string $id): RedirectResponse
     {
         try {
-            $role = Role::find($id);
-            $role->revokePermissionTo($role->permissions);
+            $role = $this->roleService->findRoleById((int) $id);
+            $this->roleService->revokeAllRolePermissions($role);
 
             return redirect()->back()->with(FlashNotification::success('Role permissions deleted successfully.'));
         } catch (Exception $e) {
