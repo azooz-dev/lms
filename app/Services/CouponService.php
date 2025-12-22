@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Coupon;
 use App\Repositories\Contracts\CouponRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
+use Carbon\Carbon;
 use Gloudemans\Shoppingcart\Facades\Cart;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -30,12 +31,16 @@ class CouponService
 
     public function createCoupon(array $data): Coupon
     {
-        return $this->couponRepository->createCoupon($data);
+        $data = $this->transformCouponData($data);
+
+        return $this->couponRepository->create($data);
     }
 
     public function updateCoupon(Coupon $coupon, array $data): Coupon
     {
-        return $this->couponRepository->updateCoupon($coupon, $data);
+        $data = $this->transformCouponData($data);
+
+        return $this->couponRepository->update($coupon, $data);
     }
 
     public function deleteCoupon(Coupon $coupon): bool
@@ -57,8 +62,9 @@ class CouponService
     public function createInstructorCoupon(array $data, int $instructorId): Coupon
     {
         $data['instructor_id'] = $instructorId;
+        $data = $this->transformCouponData($data);
 
-        return $this->couponRepository->createCoupon($data);
+        return $this->couponRepository->create($data);
     }
 
     /**
@@ -184,5 +190,21 @@ class CouponService
         }
 
         return (float) Cart::total();
+    }
+
+    /**
+     * Transform coupon data with business logic (uppercase name, format date)
+     */
+    private function transformCouponData(array $data): array
+    {
+        if (isset($data['coupon_name'])) {
+            $data['coupon_name'] = strtoupper($data['coupon_name']);
+        }
+
+        if (isset($data['coupon_validity'])) {
+            $data['coupon_validity'] = Carbon::parse($data['coupon_validity'])->format('Y-m-d');
+        }
+
+        return $data;
     }
 }

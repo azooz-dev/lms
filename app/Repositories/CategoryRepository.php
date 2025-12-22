@@ -34,27 +34,4 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
     {
         return $category->subCategories()->exists();
     }
-
-    public function createWithSlug(array $data): Category
-    {
-        $data['category_slug'] = $this->generateSlug($data['category_name']);
-
-        return Category::create($data);
-    }
-
-    public function updateWithSlug(Category $category, array $data): Category
-    {
-        if (isset($data['category_name'])) {
-            $data['category_slug'] = $this->generateSlug($data['category_name']);
-        }
-
-        $category->update($data);
-
-        return $category;
-    }
-
-    private function generateSlug(string $name): string
-    {
-        return strtolower(str_replace(' ', '-', $name));
-    }
 }

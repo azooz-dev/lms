@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\SlugGenerator;
 use App\Models\BlogCategory;
 use App\Models\Post;
 use App\Models\Tag;
@@ -38,12 +39,18 @@ class BlogService
 
     public function createCategory(array $data): BlogCategory
     {
-        return $this->blogCategoryRepository->createWithSlug($data);
+        $data['category_slug'] = SlugGenerator::generate($data['category_name']);
+
+        return $this->blogCategoryRepository->create($data);
     }
 
     public function updateCategory(BlogCategory $category, array $data): BlogCategory
     {
-        return $this->blogCategoryRepository->updateWithSlug($category, $data);
+        if (isset($data['category_name'])) {
+            $data['category_slug'] = SlugGenerator::generate($data['category_name']);
+        }
+
+        return $this->blogCategoryRepository->update($category, $data);
     }
 
     public function deleteCategory(BlogCategory $category): bool
@@ -86,8 +93,9 @@ class BlogService
     {
         $data['admin_id'] = $adminId;
         $data['image'] = $this->processImage($image);
+        $data['slug'] = SlugGenerator::generate($data['title']);
 
-        $post = $this->postRepository->createWithSlug($data);
+        $post = $this->postRepository->create($data);
 
         if ($tags) {
             $this->processTags($post, $tags);
@@ -103,7 +111,11 @@ class BlogService
             $data['image'] = $this->processImage($image);
         }
 
-        $post = $this->postRepository->updateWithSlug($post, $data);
+        if (isset($data['title'])) {
+            $data['slug'] = SlugGenerator::generate($data['title']);
+        }
+
+        $post = $this->postRepository->update($post, $data);
 
         // Handle tags
         $this->postRepository->detachTags($post);
@@ -154,7 +166,12 @@ class BlogService
                 continue;
             }
 
-            $tag = $this->tagRepository->createWithSlug(['name' => $word]);
+            $tagData = [
+                'name' => $word,
+                'slug' => SlugGenerator::generate($word),
+            ];
+
+            $tag = $this->tagRepository->create($tagData);
             $this->postRepository->attachTags($post, [$tag->id]);
         }
     }

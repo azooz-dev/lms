@@ -16,8 +16,4 @@ interface CategoryRepositoryInterface extends RepositoryInterface
     public function findByIdAndSlug(int $id, string $slug): ?Category;
 
     public function hasSubCategories(Category $category): bool;
-
-    public function createWithSlug(array $data): Category;
-
-    public function updateWithSlug(Category $category, array $data): Category;
 }

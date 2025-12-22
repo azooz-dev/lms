@@ -23,7 +23,13 @@ class UserService
      */
     public function createAdmin(array $data, string $roleName): User
     {
-        $admin = $this->userRepository->createWithRole($data, 'admin');
+        $data['role'] = 'admin';
+
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        $admin = $this->userRepository->create($data);
         $admin->assignRole($roleName);
 
         return $admin;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Helpers\ImageResizer;
+use App\Helpers\SlugGenerator;
 use App\Models\Category;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
@@ -34,8 +35,9 @@ class CategoryService
         ImageResizer::resize($image, 370, 246, $resizedPath);
 
         $data['image'] = $filename;
+        $data['category_slug'] = SlugGenerator::generate($data['category_name']);
 
-        return $this->categoryRepository->createWithSlug($data);
+        return $this->categoryRepository->create($data);
     }
 
     public function updateCategory(Category $category, array $data, ?UploadedFile $image = null): Category
@@ -48,7 +50,11 @@ class CategoryService
             $this->deleteOldImage($category);
         }
 
-        return $this->categoryRepository->updateWithSlug($category, $data);
+        if (isset($data['category_name'])) {
+            $data['category_slug'] = SlugGenerator::generate($data['category_name']);
+        }
+
+        return $this->categoryRepository->update($category, $data);
     }
 
     public function deleteCategory(Category $category): bool

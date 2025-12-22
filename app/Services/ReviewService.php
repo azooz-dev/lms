@@ -55,8 +55,14 @@ class ReviewService
         return $this->reviewRepository->find($id);
     }
 
+    /**
+     * Toggle review status (active/inactive)
+     */
     public function toggleReviewStatus(Review $review): Review
     {
-        return $this->reviewRepository->toggleStatus($review);
+        $review->status = $review->status === '1' ? '0' : '1';
+        $review->save();
+
+        return $review;
     }
 }

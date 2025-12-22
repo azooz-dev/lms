@@ -41,24 +41,6 @@ class PostRepository extends BaseRepository implements PostRepositoryInterface
         return Post::where('category_id', $categoryId)->paginate($perPage);
     }
 
-    public function createWithSlug(array $data): Post
-    {
-        $data['slug'] = $this->generateSlug($data['title']);
-
-        return Post::create($data);
-    }
-
-    public function updateWithSlug(Post $post, array $data): Post
-    {
-        if (isset($data['title'])) {
-            $data['slug'] = $this->generateSlug($data['title']);
-        }
-
-        $post->update($data);
-
-        return $post;
-    }
-
     public function attachTags(Post $post, array $tagIds): void
     {
         $post->tags()->attach($tagIds);
@@ -67,10 +49,5 @@ class PostRepository extends BaseRepository implements PostRepositoryInterface
     public function detachTags(Post $post): void
     {
         $post->tags()->detach();
-    }
-
-    private function generateSlug(string $title): string
-    {
-        return strtolower(str_replace(' ', '-', $title));
     }
 }

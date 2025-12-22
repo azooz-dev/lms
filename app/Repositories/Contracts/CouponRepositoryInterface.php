@@ -16,8 +16,4 @@ interface CouponRepositoryInterface extends RepositoryInterface
     public function findValidByName(string $couponName): ?Coupon;
 
     public function isCouponValidForCourse(Coupon $coupon, int $courseId): bool;
-
-    public function createCoupon(array $data): Coupon;
-
-    public function updateCoupon(Coupon $coupon, array $data): Coupon;
 }

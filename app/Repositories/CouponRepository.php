@@ -37,22 +37,4 @@ class CouponRepository extends BaseRepository implements CouponRepositoryInterfa
     {
         return (int) $coupon->course_id === $courseId;
     }
-
-    public function createCoupon(array $data): Coupon
-    {
-        $data['coupon_name'] = strtoupper($data['coupon_name']);
-        $data['coupon_validity'] = Carbon::parse($data['coupon_validity'])->format('Y-m-d');
-
-        return Coupon::create($data);
-    }
-
-    public function updateCoupon(Coupon $coupon, array $data): Coupon
-    {
-        $data['coupon_name'] = strtoupper($data['coupon_name']);
-        $data['coupon_validity'] = Carbon::parse($data['coupon_validity'])->format('Y-m-d');
-
-        $coupon->update($data);
-
-        return $coupon;
-    }
 }
