@@ -10,13 +10,13 @@ use Illuminate\Database\Eloquent\Collection;
 
 class BlogCategoryRepository extends BaseRepository implements BlogCategoryRepositoryInterface
 {
-    public function __construct()
-    {
-        parent::__construct(new BlogCategory);
-    }
+  public function __construct()
+  {
+    parent::__construct(new BlogCategory);
+  }
 
-    public function getAllLatest(): Collection
-    {
-        return BlogCategory::latest()->get();
-    }
+  public function getAllLatest(): Collection
+  {
+    return BlogCategory::latest()->get();
+  }
 }
