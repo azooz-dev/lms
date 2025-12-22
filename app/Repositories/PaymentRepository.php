@@ -29,21 +29,6 @@ class PaymentRepository extends BaseRepository implements PaymentRepositoryInter
             ->get();
     }
 
-    public function createWithInvoice(array $data): Payment
-    {
-        return Payment::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'address' => $data['address'],
-            'cash_delivery' => $data['cash_delivery'],
-            'total_amount' => $data['total_amount'],
-            'payment_type' => 'Direct Payment',
-            'status' => 'Pending',
-            'invoice_number' => 'ESO'.mt_rand(10000000, 99999999),
-        ]);
-    }
-
     public function confirm(Payment $payment): void
     {
         $payment->update(['status' => 'Confirm']);

@@ -41,12 +41,4 @@ class ReviewRepository extends BaseRepository implements ReviewRepositoryInterfa
             ->orderBy('id', 'DESC')
             ->get();
     }
-
-    public function toggleStatus(Review $review): Review
-    {
-        $review->status = $review->status === '1' ? '0' : '1';
-        $review->save();
-
-        return $review;
-    }
 }

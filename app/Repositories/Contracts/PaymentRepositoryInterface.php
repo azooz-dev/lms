@@ -13,7 +13,5 @@ interface PaymentRepositoryInterface extends RepositoryInterface
 
     public function getConfirmedPayments(): Collection;
 
-    public function createWithInvoice(array $data): Payment;
-
     public function confirm(Payment $payment): void;
 }

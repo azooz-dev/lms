@@ -11,7 +11,5 @@ interface TagRepositoryInterface extends RepositoryInterface
 {
     public function getAllLatest(): Collection;
 
-    public function createWithSlug(array $data): Tag;
-
     public function findByName(string $name): ?Tag;
 }

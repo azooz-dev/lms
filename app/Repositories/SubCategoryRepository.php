@@ -29,27 +29,4 @@ class SubCategoryRepository extends BaseRepository implements SubCategoryReposit
     {
         return SubCategory::where('id', $id)->where('subCategory_slug', $slug)->first();
     }
-
-    public function createWithSlug(array $data): SubCategory
-    {
-        $data['subCategory_slug'] = $this->generateSlug($data['subCategory_name']);
-
-        return SubCategory::create($data);
-    }
-
-    public function updateWithSlug(SubCategory $subCategory, array $data): SubCategory
-    {
-        if (isset($data['subCategory_name'])) {
-            $data['subCategory_slug'] = $this->generateSlug($data['subCategory_name']);
-        }
-
-        $subCategory->update($data);
-
-        return $subCategory;
-    }
-
-    private function generateSlug(string $name): string
-    {
-        return strtolower(str_replace(' ', '-', $name));
-    }
 }

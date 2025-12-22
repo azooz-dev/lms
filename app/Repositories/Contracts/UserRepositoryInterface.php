@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repositories\Contracts;
 
-use App\Models\User;
 use DateTimeInterface;
 use Illuminate\Support\Collection;
 
@@ -21,6 +20,4 @@ interface UserRepositoryInterface extends RepositoryInterface
     public function getAllInstructors(): Collection;
 
     public function getAllAdmins(): Collection;
-
-    public function createWithRole(array $data, string $role): User;
 }

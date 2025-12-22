@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repositories\Contracts;
 
-use App\Models\Review;
 use Illuminate\Support\Collection;
 
 interface ReviewRepositoryInterface extends RepositoryInterface
@@ -16,6 +15,4 @@ interface ReviewRepositoryInterface extends RepositoryInterface
     public function getActiveReviews(): Collection;
 
     public function getByInstructorId(int $instructorId): Collection;
-
-    public function toggleStatus(Review $review): Review;
 }

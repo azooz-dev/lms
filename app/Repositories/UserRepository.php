@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use DateTimeInterface;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Hash;
 
 class UserRepository extends BaseRepository implements UserRepositoryInterface
 {
@@ -49,16 +48,5 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     public function getAllAdmins(): Collection
     {
         return User::where('role', 'admin')->get();
-    }
-
-    public function createWithRole(array $data, string $role): User
-    {
-        $data['role'] = $role;
-
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        }
-
-        return User::create($data);
     }
 }

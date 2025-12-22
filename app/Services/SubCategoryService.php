@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\SlugGenerator;
 use App\Models\SubCategory;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\SubCategoryRepositoryInterface;
@@ -38,12 +39,18 @@ class SubCategoryService
 
     public function createSubCategory(array $data): SubCategory
     {
-        return $this->subCategoryRepository->createWithSlug($data);
+        $data['subCategory_slug'] = SlugGenerator::generate($data['subCategory_name']);
+
+        return $this->subCategoryRepository->create($data);
     }
 
     public function updateSubCategory(SubCategory $subCategory, array $data): SubCategory
     {
-        return $this->subCategoryRepository->updateWithSlug($subCategory, $data);
+        if (isset($data['subCategory_name'])) {
+            $data['subCategory_slug'] = SlugGenerator::generate($data['subCategory_name']);
+        }
+
+        return $this->subCategoryRepository->update($subCategory, $data);
     }
 
     public function deleteSubCategory(SubCategory $subCategory): bool

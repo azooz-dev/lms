@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\SlugGenerator;
 use App\Models\Course;
 use App\Models\Course_Lecture;
 use App\Models\Course_Section;
@@ -35,11 +36,14 @@ class CourseService
     }
 
     /**
-     * Toggle course status
+     * Toggle course status (active/inactive)
      */
     public function toggleCourseStatus(Course $course): Course
     {
-        return $this->courseRepository->toggleStatus($course);
+        $course->status = $course->status === '1' ? '0' : '1';
+        $course->save();
+
+        return $course;
     }
 
     /**
@@ -66,7 +70,7 @@ class CourseService
             'image' => $imageName,
             'name' => $data['name'],
             'title' => $data['title'],
-            'slug' => $this->generateSlug($data['name']),
+            'slug' => SlugGenerator::generate($data['name']),
             'description' => $data['description'] ?? null,
             'video_link' => $videoName,
             'course_level' => $data['level'] ?? null,
@@ -245,13 +249,5 @@ class CourseService
                 'goal' => $goalText,
             ]);
         }
-    }
-
-    /**
-     * Generate a URL-friendly slug from course name
-     */
-    private function generateSlug(string $name): string
-    {
-        return strtolower(str_replace(' ', '-', $name));
     }
 }

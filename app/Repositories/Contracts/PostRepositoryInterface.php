@@ -20,10 +20,6 @@ interface PostRepositoryInterface extends RepositoryInterface
 
     public function getByCategoryId(int $categoryId, int $perPage = 10): LengthAwarePaginator;
 
-    public function createWithSlug(array $data): Post;
-
-    public function updateWithSlug(Post $post, array $data): Post;
-
     public function attachTags(Post $post, array $tagIds): void;
 
     public function detachTags(Post $post): void;

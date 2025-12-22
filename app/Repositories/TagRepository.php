@@ -20,20 +20,8 @@ class TagRepository extends BaseRepository implements TagRepositoryInterface
         return Tag::latest()->get();
     }
 
-    public function createWithSlug(array $data): Tag
-    {
-        $data['slug'] = $this->generateSlug($data['name']);
-
-        return Tag::create($data);
-    }
-
     public function findByName(string $name): ?Tag
     {
         return Tag::where('name', $name)->first();
-    }
-
-    private function generateSlug(string $name): string
-    {
-        return strtolower(str_replace(' ', '-', $name));
     }
 }
