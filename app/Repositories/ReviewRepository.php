@@ -41,4 +41,20 @@ class ReviewRepository extends BaseRepository implements ReviewRepositoryInterfa
             ->orderBy('id', 'DESC')
             ->get();
     }
+
+    public function countByInstructor(int $instructorId): int
+    {
+        return Review::where('instructor_id', $instructorId)
+            ->where('status', '1')
+            ->count();
+    }
+
+    public function getAverageRatingByInstructor(int $instructorId): float
+    {
+        $avgRating = Review::where('instructor_id', $instructorId)
+            ->where('status', '1')
+            ->avg('rating');
+
+        return round((float) ($avgRating ?? 0), 1);
+    }
 }

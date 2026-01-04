@@ -15,7 +15,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Drivers\Imagick\Driver;
+use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 
 class BlogService
@@ -150,8 +150,15 @@ class BlogService
     $manager = new ImageManager(new Driver);
     $filename = hexdec(uniqid()) . '.' . $image->getClientOriginalExtension();
 
+    $uploadPath = public_path('storage/upload/posts_images');
+    
+    // Create directory if it doesn't exist
+    if (!file_exists($uploadPath)) {
+      mkdir($uploadPath, 0755, true);
+    }
+
     $img = $manager->read($image)->resize(370, 247)->toJpeg(80);
-    $img->save('storage/upload/posts_images/' . $filename);
+    $img->save($uploadPath . '/' . $filename);
 
     return $filename;
   }

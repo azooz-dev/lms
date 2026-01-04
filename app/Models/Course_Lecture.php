@@ -17,4 +17,9 @@ class Course_Lecture extends Model
         'video',
         'url',
     ];
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id');
+    }
 }

@@ -13,7 +13,6 @@ class Question extends Model
         'course_id',
         'instructor_id',
         'user_id',
-        'reply_id',
         'subject',
         'question',
         'read_status',

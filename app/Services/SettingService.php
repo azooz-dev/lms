@@ -9,7 +9,7 @@ use App\Models\SiteSetting;
 use App\Repositories\Contracts\SettingRepositoryInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Drivers\Imagick\Driver;
+use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 
 class SettingService

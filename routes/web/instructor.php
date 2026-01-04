@@ -32,6 +32,7 @@ Route::middleware(['auth', 'roles:instructor'])
         // Dashboard & Profile
         Route::controller(InstructorController::class)->group(function () {
             Route::get('/dashboard', 'dashboard')->name('instructor.dashboard');
+            Route::get('/dashboard/chart-data', 'getChartData')->name('instructor.chart_data');
             Route::get('/logout', 'logout')->name('instructor.logout');
             Route::get('/profile', 'instructor_profile')->name('instructor.profile');
             Route::put('/update/{update}', 'instructor_update')->name('instructor.update');

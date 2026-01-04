@@ -43,14 +43,14 @@
                                 <td class="text-center">{{ $instructor->email }}</td>
                                 <td class="text-center">{{ $instructor->phone }}</td>
                                 <td class="text-center">{{ $instructor->address }}</td>
-                                <td class="text-center">@if ($instructor->status == 1)
+                                <td class="text-center">@if ($instructor->status == \App\Enums\UserStatus::ACTIVE)
                                     <span class="badge bg-success">Active</span>
                                 @else
                                     <span class="badge bg-danger">Inactive</span>
                                 @endif</td>
                                 <td class="text-center"><div class="form-check-danger form-check form-switch">
                                     <input class="form-check-input" style="font-size: 17px; margin-left: -20px;" type="checkbox" id="statusSwitch{{ $instructor->id }}" 
-                                    @if ($instructor->status == 1) checked @endif 
+                                    @if ($instructor->status == \App\Enums\UserStatus::ACTIVE) checked @endif 
                                     data-id="{{ $instructor->id }}" 
                                     data-name="{{ $instructor->name }}" 
                                     onchange="updateInstructorStatus(this)">

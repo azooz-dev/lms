@@ -15,4 +15,8 @@ interface ReviewRepositoryInterface extends RepositoryInterface
     public function getActiveReviews(): Collection;
 
     public function getByInstructorId(int $instructorId): Collection;
+
+    public function countByInstructor(int $instructorId): int;
+
+    public function getAverageRatingByInstructor(int $instructorId): float;
 }

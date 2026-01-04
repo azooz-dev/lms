@@ -18,4 +18,6 @@ interface CourseRepositoryInterface extends RepositoryInterface
     public function getFeaturedCourses(int $limit): Collection;
 
     public function findByIdAndSlug(int $id, string $slug): ?Course;
+
+    public function countByInstructor(int $instructorId): int;
 }

@@ -91,6 +91,7 @@ class AdminController extends Controller
     {
         try {
             $admin = $this->userService->getUserById((int) $id);
+            
             $this->userService->updateAdminProfile(
                 $admin,
                 $request->validated(),

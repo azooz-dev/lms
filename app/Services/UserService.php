@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Events\InstructorRegistered;
 use App\Models\User;
-use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Enums\UserStatus;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use App\Events\InstructorRegistered;
 use Illuminate\Support\Facades\Hash;
+use App\Repositories\Contracts\UserRepositoryInterface;
 
 class UserService
 {
@@ -41,6 +42,7 @@ class UserService
     public function updateAdmin(User $admin, array $data, string $roleName): User
     {
         $data['role'] = 'admin';
+
 
         $admin->update($data);
         $admin->syncRoles($roleName);
@@ -94,12 +96,12 @@ class UserService
     /**
      * Toggle user status (active/inactive)
      */
-    public function toggleUserStatus(User $user): User
+    public function toggleUserStatus(User $user): bool
     {
-        $user->status = $user->status === '1' ? '0' : '1';
+        $user->status = $user->status === UserStatus::ACTIVE ? UserStatus::INACTIVE : UserStatus::ACTIVE;
         $user->save();
 
-        return $user;
+        return $user->status == UserStatus::ACTIVE;
     }
 
     /**
@@ -149,7 +151,7 @@ class UserService
     /**
      * Update admin profile with optional photo
      */
-    public function updateAdminProfile(User $admin, array $data, ?UploadedFile $photo = null): User
+    public function updateAdminProfile(User $admin, array $data, ?UploadedFile $photo = null): bool
     {
         if ($photo) {
             // Delete old photo if exists
@@ -164,9 +166,7 @@ class UserService
             unset($data['photo']);
         }
 
-        $admin->update($data);
-
-        return $admin;
+        return $admin->update($data);
     }
 
     /**

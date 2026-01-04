@@ -6,8 +6,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\InstructorDashboardService;
 use App\Services\UserService;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +18,8 @@ use Illuminate\View\View;
 class InstructorController extends Controller
 {
     public function __construct(
-        private readonly UserService $userService
+        private readonly UserService $userService,
+        private readonly InstructorDashboardService $dashboardService
     ) {}
 
     /**
@@ -24,8 +27,30 @@ class InstructorController extends Controller
      */
     public function dashboard(): View
     {
-        return view('instructor.index');
+        $instructorId = Auth::id();
+
+        return view('instructor.index', [
+            'id' => $instructorId,
+            ...$this->dashboardService->getStatistics($instructorId),
+            'monthlySales' => $this->dashboardService->getMonthlySales($instructorId),
+            'recentOrders' => $this->dashboardService->getRecentOrders($instructorId),
+            'topCourses' => $this->dashboardService->getTopCourses($instructorId),
+            'recentReviews' => $this->dashboardService->getRecentReviews($instructorId),
+            'pendingQuestions' => $this->dashboardService->getPendingQuestions($instructorId),
+            ...$this->dashboardService->getPercentageChanges($instructorId),
+        ]);
     }
+
+    /**
+     * Get chart data for AJAX requests
+     */
+    public function getChartData(): JsonResponse
+    {
+        $instructorId = Auth::id();
+
+        return response()->json($this->dashboardService->getChartData($instructorId));
+    }
+
 
     /**
      * Log the instructor out of the application.

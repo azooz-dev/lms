@@ -21,7 +21,7 @@
             </a>
         </li>
         
-        @if (Auth::user()->status == 1)
+        @if (Auth::user()->status == \App\Enums\UserStatus::ACTIVE)
         
                 <li>
                     <a href="javascript:;" class="has-arrow">

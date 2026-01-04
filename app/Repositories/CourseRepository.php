@@ -43,4 +43,9 @@ class CourseRepository extends BaseRepository implements CourseRepositoryInterfa
     {
         return Course::where('id', $id)->where('slug', $slug)->first();
     }
+
+    public function countByInstructor(int $instructorId): int
+    {
+        return Course::where('instructor_id', $instructorId)->count();
+    }
 }

@@ -211,19 +211,6 @@
             </li>
         @endcan
 
-        <li>
-            <a class="has-arrow" href="javascript:;">
-                <div class="parent-icon"><i class="bx bx-map-alt"></i>
-                </div>
-                <div class="menu-title">Maps</div>
-            </a>
-            <ul>
-                <li> <a href="map-google-maps.html"><i class='bx bx-radio-circle'></i>Google Maps</a>
-                </li>
-                <li> <a href="map-vector-maps.html"><i class='bx bx-radio-circle'></i>Vector Maps</a>
-                </li>
-            </ul>
-        </li>
 
     </ul>
     <!--end navigation-->

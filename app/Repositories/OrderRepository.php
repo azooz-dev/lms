@@ -110,4 +110,88 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
     {
         $order->update(['is_visible_to_user' => '0']);
     }
+
+    // Instructor-specific methods
+
+    public function countByInstructor(int $instructorId): int
+    {
+        return Order::where('instructor_id', $instructorId)->count();
+    }
+
+    public function getTotalRevenueByInstructor(int $instructorId): float
+    {
+        return (float) Order::where('instructor_id', $instructorId)
+            ->join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->sum('orders.course_price');
+    }
+
+    public function getUniqueStudentsByInstructor(int $instructorId): int
+    {
+        return Order::where('instructor_id', $instructorId)
+            ->distinct('user_id')
+            ->count('user_id');
+    }
+
+    public function getPendingOrdersCountByInstructor(int $instructorId): int
+    {
+        return Order::where('instructor_id', $instructorId)
+            ->join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'pending')
+            ->count();
+    }
+
+    public function getCompletedOrdersCountByInstructor(int $instructorId): int
+    {
+        return Order::where('instructor_id', $instructorId)
+            ->join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->count();
+    }
+
+    public function getMonthlySalesByInstructor(int $instructorId, int $year): Collection
+    {
+        return Order::where('instructor_id', $instructorId)
+            ->join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->whereYear('orders.created_at', $year)
+            ->selectRaw('MONTH(orders.created_at) as month, SUM(orders.course_price) as total_sales, COUNT(*) as order_count')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+    }
+
+    public function getRecentOrdersByInstructor(int $instructorId, int $limit): Collection
+    {
+        return Order::where('instructor_id', $instructorId)
+            ->with(['course', 'user', 'payment'])
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function getOrdersCountByInstructorInDateRange(int $instructorId, DateTimeInterface $start, DateTimeInterface $end): int
+    {
+        return Order::where('instructor_id', $instructorId)
+            ->whereBetween('created_at', [$start, $end])
+            ->count();
+    }
+
+    public function getRevenueByInstructorInDateRange(int $instructorId, DateTimeInterface $start, DateTimeInterface $end): float
+    {
+        return (float) Order::where('instructor_id', $instructorId)
+            ->join('payments', 'orders.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'completed')
+            ->whereBetween('orders.created_at', [$start, $end])
+            ->sum('orders.course_price');
+    }
+
+    public function getUniqueStudentsByInstructorInDateRange(int $instructorId, DateTimeInterface $start, DateTimeInterface $end): int
+    {
+        return Order::where('instructor_id', $instructorId)
+            ->whereBetween('created_at', [$start, $end])
+            ->distinct('user_id')
+            ->count('user_id');
+    }
 }
+
