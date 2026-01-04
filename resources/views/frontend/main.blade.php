@@ -415,9 +415,15 @@
             } else {
                 console.error('cartContent is not an object:', data.cartContent);
             }
-            document.getElementById('tbody').innerHTML = cart;
-            document.getElementById('subtotal').innerHTML = `$${subtotal.toFixed(2)}`;
-            document.getElementById('total').innerHTML = `$${data.cartTotal}`;
+            
+            // Only update elements if they exist on the page
+            const tbodyEl = document.getElementById('tbody');
+            const subtotalEl = document.getElementById('subtotal');
+            const totalEl = document.getElementById('total');
+            
+            if (tbodyEl) tbodyEl.innerHTML = cart;
+            if (subtotalEl) subtotalEl.innerHTML = `$${subtotal.toFixed(2)}`;
+            if (totalEl) totalEl.innerHTML = `$${data.cartTotal}`;
 
         })
     }
@@ -735,6 +741,11 @@
      */
     function cartCalc() {
         const cartTotal = document.getElementById('cartTotal');
+        
+        // Only run cart calculation if the cartTotal element exists on the page
+        if (!cartTotal) {
+            return;
+        }
 
         const url = '{{ route('cart_calculation') }}';
 

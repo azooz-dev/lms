@@ -27,98 +27,6 @@
                             </form>
                             <div class="nav-right-button d-flex align-items-center">
                                 <div class="user-action-wrap d-flex align-items-center">
-
-                                    <div class="shop-cart wishlist-cart pr-3 mr-3 border-right border-right-gray">
-                                        <ul>
-                                            <li>
-                                                <p class="shop-cart-btn">
-                                                    <i class="la la-heart-o"></i>
-                                                    <span class="dot-status bg-1"></span>
-                                                </p>
-                                                <ul class="cart-dropdown-menu after-none">
-                                                    <li>
-                                                        <div class="media media-card">
-                                                            <a href="course-details.html" class="media-img">
-                                                                <img class="mr-3" src="{{ asset('frontend/images/small-img.jpg') }}" alt="Cart image">
-                                                            </a>
-                                                            <div class="media-body">
-                                                                <h5><a href="course-details.html">The Complete JavaScript Course 2021: From Zero to Expert!</a></h5>
-                                                                <span class="d-block lh-18 py-1">Kamran Ahmed</span>
-                                                                <p class="text-black font-weight-semi-bold lh-18">$12.99 <span class="before-price fs-14">$129.99</span></p>
-                                                            </div>
-                                                        </div>
-                                                        <a href="#" class="btn theme-btn theme-btn-sm theme-btn-transparent lh-28 w-100 mt-3">Add to cart <i class="la la-arrow-right icon ml-1"></i></a>
-                                                    </li>
-                                                    <li>
-                                                        <div class="media media-card">
-                                                            <a href="course-details.html" class="media-img">
-                                                                <img class="mr-3" src="{{ asset('frontend/images/small-img.jpg') }}" alt="Cart image">
-                                                            </a>
-                                                            <div class="media-body">
-                                                                <h5><a href="course-details.html">The Complete JavaScript Course 2021: From Zero to Expert!</a></h5>
-                                                                <span class="d-block lh-18 py-1">Kamran Ahmed</span>
-                                                                <p class="text-black font-weight-semi-bold lh-18">$12.99 <span class="before-price fs-14">$129.99</span></p>
-                                                            </div>
-                                                        </div>
-                                                        <a href="#" class="btn theme-btn theme-btn-sm theme-btn-transparent lh-28 w-100 mt-3">Add to cart <i class="la la-arrow-right icon ml-1"></i></a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="my-courses.html" class="btn theme-btn w-100">Got to wishlist <i class="la la-arrow-right icon ml-1"></i></a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                        </ul>
-                                    </div><!-- end shop-cart -->
-                                    <div class="shop-cart notification-cart pr-3 mr-3 border-right border-right-gray">
-                                        <ul>
-                                            <li>
-                                                <p class="shop-cart-btn">
-                                                    <i class="la la-bell"></i>
-                                                    <span class="dot-status bg-1"></span>
-                                                </p>
-                                                <ul class="cart-dropdown-menu after-none p-0 notification-dropdown-menu">
-                                                    <li class="menu-heading-block d-flex align-items-center justify-content-between">
-                                                        <h4>Notifications</h4>
-                                                        <span class="ribbon fs-14">18</span>
-                                                    </li>
-                                                    <li>
-                                                        <div class="notification-body">
-                                                            <a href="dashboard.html" class="media media-card align-items-center">
-                                                                <div class="icon-element icon-element-sm flex-shrink-0 bg-1 mr-3 text-white">
-                                                                    <i class="la la-bolt"></i>
-                                                                </div>
-                                                                <div class="media-body">
-                                                                    <h5>Your resume updated!</h5>
-                                                                    <span class="d-block lh-18 pt-1 text-gray fs-13">1 hour ago</span>
-                                                                </div>
-                                                            </a>
-                                                            <a href="dashboard.html" class="media media-card align-items-center">
-                                                                <div class="icon-element icon-element-sm flex-shrink-0 bg-2 mr-3 text-white">
-                                                                    <i class="la la-lock"></i>
-                                                                </div>
-                                                                <div class="media-body">
-                                                                    <h5>You changed password</h5>
-                                                                    <span class="d-block lh-18 pt-1 text-gray fs-13">November 12, 2019</span>
-                                                                </div>
-                                                            </a>
-                                                            <a href="dashboard.html" class="media media-card align-items-center">
-                                                                <div class="icon-element icon-element-sm flex-shrink-0 bg-3 mr-3 text-white">
-                                                                    <i class="la la-(user)"></i>
-                                                                </div>
-                                                                <div class="media-body">
-                                                                    <h5>Your account has been created successfully</h5>
-                                                                    <span class="d-block lh-18 pt-1 text-gray fs-13">November 12, 2019</span>
-                                                                </div>
-                                                            </a>
-                                                        </div>
-                                                    </li>
-                                                    <li class="menu-heading-block">
-                                                        <a href="dashboard.html" class="btn theme-btn w-100">Show All Notifications <i class="la la-arrow-right icon ml-1"></i></a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                        </ul>
-                                    </div><!-- end shop-cart -->
                                     <div class="shop-cart user-profile-cart">
                                         <ul>
                                             <li>
@@ -169,41 +77,10 @@
                                                                     <i class="la la-gear mr-1"></i> Settings
                                                                 </a>
                                                             </li>
-                                                            <li>
-                                                                <a href="dashboard-purchase-history.html">
-                                                                    <i class="la la-history mr-1"></i> Purchase history
-                                                                </a>
-                                                            </li>
                                                             <li><div class="section-block"></div></li>
-                                                            <li>
-                                                                <a href="student-detail.html">
-                                                                    <i class="la la-user mr-1"></i> Public profile
-                                                                </a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="dashboard-settings.html">
-                                                                    <i class="la la-edit mr-1"></i> Edit profile
-                                                                </a>
-                                                            </li>
-                                                            <li><div class="section-block"></div></li>
-                                                            <li>
-                                                                <a href="#">
-                                                                    <i class="la la-question mr-1"></i> Help
-                                                                </a>
-                                                            </li>
                                                             <li>
                                                                 <a href="{{ route('user.logout') }}">
                                                                     <i class="la la-power-off mr-1"></i> Logout
-                                                                </a>
-                                                            </li>
-                                                            <li><div class="section-block"></div></li>
-                                                            <li>
-                                                                <a href="#" class="position-relative">
-                                                                    <span class="fs-17 font-weight-semi-bold d-block">Aduca for Business</span>
-                                                                    <span class="lh-20 d-block fs-14 text-gray">Bring learning to your company</span>
-                                                                    <span class="position-absolute top-0 right-0 mt-3 mr-3 fs-18 text-gray">
-                                                                    <i class="la la-external-link"></i>
-                                                                </span>
                                                                 </a>
                                                             </li>
                                                         </ul>

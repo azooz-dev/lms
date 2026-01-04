@@ -287,7 +287,7 @@
             </div><!-- end col-lg-4 -->
             <div class="col-lg-8">
                 <div class="row">
-                    @foreach ($category->courses->where('status', 1)->sortBy('created_at') as $course)
+                    @foreach ($category->courses->where('status', \App\Enums\CourseStatus::PUBLISHED)->sortBy('created_at') as $course)
                     <div class="col-lg-6 responsive-column-half">
                         <div class="card card-item card-preview" data-tooltip-content="#tooltip_content_1">
                             <div class="card-image">

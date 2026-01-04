@@ -66,106 +66,7 @@
                     </div><!-- end card-body -->
                 </div><!-- end card -->
                 <div class="section-block"></div>
-                <div class="comments-wrap pt-5" id="comments">
-                    <div class="d-flex align-items-center justify-content-between pb-4">
-                        <h3 class="fs-22 font-weight-semi-bold">Comments</h3>
-                        <span class="ribbon ribbon-lg">{{ count($post->comments) }}</span>
-                    </div>
-                    <div class="comment-list">
-                        <div class="media media-card border-bottom border-bottom-gray pb-4 mb-4">
-                            <div class="media-img mr-4 rounded-full">
-                                <img class="rounded-full lazy" src="images/img-loading.png" data-src="images/small-avatar-1.jpg" alt="User image">
-                            </div>
-                            <div class="media-body">
-                                <h5 class="pb-2">Kavi arasan</h5>
-                                <span class="d-block lh-18 pb-2">a month ago</span>
-                                <p class="pb-3">This is one of the best courses I have taken in Udemy. It is very complete, and it has made continue learning about Java and SQL databases as well.</p>
-                                <div class="helpful-action d-flex align-items-center justify-content-between">
-                                    <a class="btn theme-btn theme-btn-sm theme-btn-transparent lh-30" href="#" data-toggle="modal" data-target="#replyModal"><i class="la la-reply mr-1"></i> Reply</a>
-                                    <div class="pl-2">
-                                        <span class="fs-13">Was this review helpful?</span>
-                                        <button class="btn">Yes</button>
-                                        <button class="btn">No</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div><!-- end media -->
-                        <div class="media media-card border-bottom border-bottom-gray pb-4 mb-4 review-reply">
-                            <div class="media-img mr-4 rounded-full">
-                                <img class="rounded-full lazy" src="images/img-loading.png" data-src="images/small-avatar-2.jpg" alt="User image">
-                            </div>
-                            <div class="media-body">
-                                <h5 class="pb-2">Jitesh Shaw</h5>
-                                <span class="d-block lh-18 pb-2">1 months ago</span>
-                                <p class="pb-3">This is one of the best courses I have taken in Udemy. It is very complete, and it has made continue learning about Java and SQL databases as well.</p>
-                                <div class="helpful-action d-flex align-items-center justify-content-between">
-                                    <a class="btn theme-btn theme-btn-sm theme-btn-transparent lh-30" href="#" data-toggle="modal" data-target="#replyModal"><i class="la la-reply mr-1"></i> Reply</a>
-                                    <div class="pl-2">
-                                        <span class="fs-13">Was this review helpful?</span>
-                                        <button class="btn">Yes</button>
-                                        <button class="btn">No</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div><!-- end media -->
-                        <div class="media media-card border-bottom border-bottom-gray pb-4 mb-4">
-                            <div class="media-img mr-4 rounded-full">
-                                <img class="rounded-full lazy" src="images/img-loading.png" data-src="images/small-avatar-3.jpg" alt="User image">
-                            </div>
-                            <div class="media-body">
-                                <h5 class="pb-2">Miguel Sanches</h5>
-                                <span class="d-block lh-18 pb-2">2 month ago</span>
-                                <p class="pb-3">This is one of the best courses I have taken in Udemy. It is very complete, and it has made continue learning about Java and SQL databases as well.</p>
-                                <div class="helpful-action d-flex align-items-center justify-content-between">
-                                    <a class="btn theme-btn theme-btn-sm theme-btn-transparent lh-30" href="#" data-toggle="modal" data-target="#replyModal"><i class="la la-reply mr-1"></i> Reply</a>
-                                    <div class="pl-2">
-                                        <span class="fs-13">Was this review helpful?</span>
-                                        <button class="btn">Yes</button>
-                                        <button class="btn">No</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div><!-- end media -->
-                    </div>
-                    <div class="load-more-btn-box text-center pt-3 pb-5">
-                        <button class="btn theme-btn theme-btn-sm theme-btn-transparent lh-30"><i class="la la-refresh mr-1"></i> Load More Comment</button>
-                    </div>
-                </div>
-                <div class="section-block"></div>
-                <div class="add-comment-wrap pt-5">
-                    <h3 class="fs-22 font-weight-semi-bold pb-4">Add a Comment</h3>
-                    <form method="post" class="row">
-                        <div class="input-box col-lg-6">
-                            <label class="label-text">Name</label>
-                            <div class="form-group">
-                                <input class="form-control form--control" type="text" name="name" placeholder="Your Name">
-                                <span class="la la-user input-icon"></span>
-                            </div>
-                        </div><!-- end input-box -->
-                        <div class="input-box col-lg-6">
-                            <label class="label-text">Email</label>
-                            <div class="form-group">
-                                <input class="form-control form--control" type="email" name="email" placeholder="Email Address">
-                                <span class="la la-envelope input-icon"></span>
-                            </div>
-                        </div><!-- end input-box -->
-                        <div class="input-box col-lg-12">
-                            <label class="label-text">Message</label>
-                            <div class="form-group">
-                                <textarea class="form-control form--control pl-3" name="message" placeholder="Write Message" rows="5"></textarea>
-                            </div>
-                        </div><!-- end input-box -->
-                        <div class="btn-box col-lg-12">
-                            <div class="custom-control custom-checkbox mb-3 fs-15">
-                                <input type="checkbox" class="custom-control-input" id="saveCheckbox" required>
-                                <label class="custom-control-label custom--control-label" for="saveCheckbox">
-                                    Save my name, and email in this browser for the next time I comment.
-                                </label>
-                            </div><!-- end custom-control -->
-                            <button class="btn theme-btn" type="submit">Submit Comment</button>
-                        </div><!-- end btn-box -->
-                    </form>
-                </div><!-- end add-comment-wrap -->
+              
             </div><!-- end col-lg-8 -->
             <div class="col-lg-4">
                     <div class="card card-item">
@@ -201,40 +102,6 @@
                         </div>
                     </div><!-- end card -->
                     <div class="card card-item">
-                        <div class="card-body">
-                            <h3 class="card-title fs-18 pb-2">Sidebar Form</h3>
-                            <div class="divider"><span></span></div>
-                            <form method="post">
-                                <div class="form-group">
-                                    <input class="form-control form--control" type="text" name="text" placeholder="Name">
-                                    <span class="la la-user input-icon"></span>
-                                </div>
-                                <div class="form-group">
-                                    <input class="form-control form--control" type="email" name="email" placeholder="Email">
-                                    <span class="la la-envelope input-icon"></span>
-                                </div>
-                                <div class="form-group">
-                                    <textarea class="form-control form--control pl-3" name="message" rows="4" placeholder="Write message"></textarea>
-                                </div>
-                                <div class="btn-box">
-                                    <button class="btn theme-btn w-100">Contact Author <i class="la la-arrow-right icon ml-1"></i></button>
-                                </div>
-                            </form>
-                        </div>
-                    </div><!-- end card -->
-                    <div class="card card-item">
-                    </div><!-- end card -->
-                    <div class="card card-item">
-                        <div class="card-body">
-                            <h3 class="card-title fs-18 pb-2">Connect & Follow</h3>
-                            <div class="divider"><span></span></div>
-                            <ul class="social-icons social-icons-styled social--icons-styled">
-                                <li><a href="#"><i class="la la-facebook"></i></a></li>
-                                <li><a href="#"><i class="la la-twitter"></i></a></li>
-                                <li><a href="#"><i class="la la-instagram"></i></a></li>
-                                <li><a href="#"><i class="la la-youtube"></i></a></li>
-                            </ul>
-                        </div>
                     </div><!-- end card -->
                 </div><!-- end sidebar -->
             </div><!-- end col-lg-4 -->
